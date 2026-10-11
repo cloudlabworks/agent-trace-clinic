@@ -1,0 +1,473 @@
+{
+ "resourceSpans": [
+  {
+   "resource": {
+    "attributes": [
+     {
+      "key": "service.name",
+      "value": {
+       "stringValue": "demo-agent"
+      }
+     }
+    ]
+   },
+   "scopeSpans": [
+    {
+     "scope": {
+      "name": "demo-instrumentation"
+     },
+     "spans": [
+      {
+       "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+       "spanId": "0000000000000006",
+       "parentSpanId": "0000000000000001",
+       "name": "chat demo-model",
+       "kind": 3,
+       "startTimeUnixNano": "1791590430000000000",
+       "endTimeUnixNano": "1791590431000000000",
+       "status": {
+        "code": 1
+       },
+       "attributes": [
+        {
+         "key": "gen_ai.operation.name",
+         "value": {
+          "stringValue": "chat"
+         }
+        },
+        {
+         "key": "gen_ai.provider.name",
+         "value": {
+          "stringValue": "openai"
+         }
+        },
+        {
+         "key": "gen_ai.request.model",
+         "value": {
+          "stringValue": "demo-model"
+         }
+        },
+        {
+         "key": "gen_ai.usage.input_tokens",
+         "value": {
+          "intValue": "380"
+         }
+        },
+        {
+         "key": "gen_ai.usage.output_tokens",
+         "value": {
+          "intValue": "20"
+         }
+        },
+        {
+         "key": "gen_ai.output.messages",
+         "value": {
+          "stringValue": "[{\"role\":\"assistant\",\"parts\":[{\"type\":\"tool_call\",\"id\":\"x\",\"name\":\"fetch_url\",\"arguments\":{\"url\":\"https://status.vendor.test/v1/incidents\",\"since\":\"24h\"}}],\"finish_reason\":\"tool_call\"}]"
+         }
+        }
+       ]
+      },
+      {
+       "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+       "spanId": "0000000000000001",
+       "name": "invoke_agent status-checker",
+       "kind": 1,
+       "startTimeUnixNano": "1791590400000000000",
+       "endTimeUnixNano": "1791590500000000000",
+       "status": {
+        "code": 1
+       },
+       "attributes": [
+        {
+         "key": "gen_ai.operation.name",
+         "value": {
+          "stringValue": "invoke_agent"
+         }
+        },
+        {
+         "key": "gen_ai.agent.name",
+         "value": {
+          "stringValue": "status-checker"
+         }
+        }
+       ]
+      },
+      {
+       "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+       "spanId": "000000000000000a",
+       "parentSpanId": "0000000000000001",
+       "name": "chat demo-model",
+       "kind": 3,
+       "startTimeUnixNano": "1791590450000000000",
+       "endTimeUnixNano": "1791590451000000000",
+       "status": {
+        "code": 1
+       },
+       "attributes": [
+        {
+         "key": "gen_ai.operation.name",
+         "value": {
+          "stringValue": "chat"
+         }
+        },
+        {
+         "key": "gen_ai.provider.name",
+         "value": {
+          "stringValue": "openai"
+         }
+        },
+        {
+         "key": "gen_ai.request.model",
+         "value": {
+          "stringValue": "demo-model"
+         }
+        },
+        {
+         "key": "gen_ai.usage.input_tokens",
+         "value": {
+          "intValue": "460"
+         }
+        },
+        {
+         "key": "gen_ai.usage.output_tokens",
+         "value": {
+          "intValue": "60"
+         }
+        },
+        {
+         "key": "gen_ai.output.messages",
+         "value": {
+          "stringValue": "[{\"role\":\"assistant\",\"parts\":[{\"type\":\"text\",\"content\":\"No incidents are listed on the vendor status page right now.\"}],\"finish_reason\":\"stop\"}]"
+         }
+        }
+       ]
+      },
+      {
+       "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+       "spanId": "0000000000000003",
+       "name": "execute_tool fetch_url",
+       "kind": 1,
+       "startTimeUnixNano": "1791590411000000000",
+       "endTimeUnixNano": "1791590412000000000",
+       "status": {
+        "code": 1
+       },
+       "attributes": [
+        {
+         "key": "gen_ai.operation.name",
+         "value": {
+          "stringValue": "execute_tool"
+         }
+        },
+        {
+         "key": "gen_ai.tool.name",
+         "value": {
+          "stringValue": "fetch_url"
+         }
+        },
+        {
+         "key": "gen_ai.tool.call.arguments",
+         "value": {
+          "stringValue": "{\"url\": \"https://status.vendor.test/v1/incidents\", \"since\": \"24h\"}"
+         }
+        },
+        {
+         "key": "gen_ai.tool.call.result",
+         "value": {
+          "stringValue": "HTTP 200 []"
+         }
+        }
+       ]
+      },
+      {
+       "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+       "spanId": "0000000000000001",
+       "name": "GET",
+       "kind": 3,
+       "startTimeUnixNano": "1791590412000000000",
+       "endTimeUnixNano": "1791590413000000000",
+       "status": {
+        "code": 0
+       },
+       "attributes": [
+        {
+         "key": "http.request.method",
+         "value": {
+          "stringValue": "GET"
+         }
+        },
+        {
+         "key": "http.response.status_code",
+         "value": {
+          "intValue": "200"
+         }
+        }
+       ]
+      },
+      {
+       "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+       "spanId": "0000000000000008",
+       "parentSpanId": "0000000000000001",
+       "name": "chat demo-model",
+       "kind": 3,
+       "startTimeUnixNano": "1791590440000000000",
+       "endTimeUnixNano": "1791590441000000000",
+       "status": {
+        "code": 1
+       },
+       "attributes": [
+        {
+         "key": "gen_ai.operation.name",
+         "value": {
+          "stringValue": "chat"
+         }
+        },
+        {
+         "key": "gen_ai.provider.name",
+         "value": {
+          "stringValue": "openai"
+         }
+        },
+        {
+         "key": "gen_ai.request.model",
+         "value": {
+          "stringValue": "demo-model"
+         }
+        },
+        {
+         "key": "gen_ai.usage.input_tokens",
+         "value": {
+          "intValue": "420"
+         }
+        },
+        {
+         "key": "gen_ai.usage.output_tokens",
+         "value": {
+          "intValue": "20"
+         }
+        },
+        {
+         "key": "gen_ai.output.messages",
+         "value": {
+          "stringValue": "[{\"role\":\"assistant\",\"parts\":[{\"type\":\"tool_call\",\"id\":\"x\",\"name\":\"fetch_url\",\"arguments\":{\"url\":\"https://status.vendor.test/v1/incidents\",\"since\":\"24h\"}}],\"finish_reason\":\"tool_call\"}]"
+         }
+        }
+       ]
+      },
+      {
+       "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+       "spanId": "0000000000000002",
+       "parentSpanId": "0000000000000001",
+       "name": "chat demo-model",
+       "kind": 3,
+       "startTimeUnixNano": "1791590410000000000",
+       "endTimeUnixNano": "1791590411000000000",
+       "status": {
+        "code": 1
+       },
+       "attributes": [
+        {
+         "key": "gen_ai.operation.name",
+         "value": {
+          "stringValue": "chat"
+         }
+        },
+        {
+         "key": "gen_ai.provider.name",
+         "value": {
+          "stringValue": "openai"
+         }
+        },
+        {
+         "key": "gen_ai.request.model",
+         "value": {
+          "stringValue": "demo-model"
+         }
+        },
+        {
+         "key": "gen_ai.usage.input_tokens",
+         "value": {
+          "intValue": "300"
+         }
+        },
+        {
+         "key": "gen_ai.usage.output_tokens",
+         "value": {
+          "intValue": "20"
+         }
+        },
+        {
+         "key": "gen_ai.output.messages",
+         "value": {
+          "stringValue": "[{\"role\":\"assistant\",\"parts\":[{\"type\":\"tool_call\",\"id\":\"x\",\"name\":\"fetch_url\",\"arguments\":{\"url\":\"https://status.vendor.test/v1/incidents\",\"since\":\"24h\"}}],\"finish_reason\":\"tool_call\"}]"
+         }
+        }
+       ]
+      },
+      {
+       "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+       "spanId": "0000000000000005",
+       "name": "execute_tool fetch_url",
+       "kind": 1,
+       "startTimeUnixNano": "1791590421000000000",
+       "endTimeUnixNano": "1791590422000000000",
+       "status": {
+        "code": 1
+       },
+       "attributes": [
+        {
+         "key": "gen_ai.operation.name",
+         "value": {
+          "stringValue": "execute_tool"
+         }
+        },
+        {
+         "key": "gen_ai.tool.name",
+         "value": {
+          "stringValue": "fetch_url"
+         }
+        },
+        {
+         "key": "gen_ai.tool.call.arguments",
+         "value": {
+          "stringValue": "{\"since\":\"24h\",\"url\":\"https://status.vendor.test/v1/incidents\"}"
+         }
+        },
+        {
+         "key": "gen_ai.tool.call.result",
+         "value": {
+          "stringValue": "HTTP 200 []"
+         }
+        }
+       ]
+      },
+      {
+       "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+       "spanId": "0000000000000009",
+       "name": "execute_tool fetch_url",
+       "kind": 1,
+       "startTimeUnixNano": "1791590441000000000",
+       "endTimeUnixNano": "1791590442000000000",
+       "status": {
+        "code": 1
+       },
+       "attributes": [
+        {
+         "key": "gen_ai.operation.name",
+         "value": {
+          "stringValue": "execute_tool"
+         }
+        },
+        {
+         "key": "gen_ai.tool.name",
+         "value": {
+          "stringValue": "fetch_url"
+         }
+        },
+        {
+         "key": "gen_ai.tool.call.arguments",
+         "value": {
+          "stringValue": "{\"since\":\"24h\",\"url\":\"https://status.vendor.test/v1/incidents\"}"
+         }
+        },
+        {
+         "key": "gen_ai.tool.call.result",
+         "value": {
+          "stringValue": "HTTP 200 []"
+         }
+        }
+       ]
+      },
+      {
+       "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+       "spanId": "0000000000000004",
+       "parentSpanId": "0000000000000001",
+       "name": "chat demo-model",
+       "kind": 3,
+       "startTimeUnixNano": "1791590420000000000",
+       "endTimeUnixNano": "1791590421000000000",
+       "status": {
+        "code": 1
+       },
+       "attributes": [
+        {
+         "key": "gen_ai.operation.name",
+         "value": {
+          "stringValue": "chat"
+         }
+        },
+        {
+         "key": "gen_ai.provider.name",
+         "value": {
+          "stringValue": "openai"
+         }
+        },
+        {
+         "key": "gen_ai.request.model",
+         "value": {
+          "stringValue": "demo-model"
+         }
+        },
+        {
+         "key": "gen_ai.usage.input_tokens",
+         "value": {
+          "intValue": "340"
+         }
+        },
+        {
+         "key": "gen_ai.usage.output_tokens",
+         "value": {
+          "intValue": "20"
+         }
+        },
+        {
+         "key": "gen_ai.output.messages",
+         "value": {
+          "stringValue": "[{\"role\":\"assistant\",\"parts\":[{\"type\":\"tool_call\",\"id\":\"x\",\"name\":\"fetch_url\",\"arguments\":{\"url\":\"https://status.vendor.test/v1/incidents\",\"since\":\"24h\"}}],\"finish_reason\":\"tool_call\"}]"
+         }
+        }
+       ]
+      },
+      {
+       "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+       "spanId": "0000000000000007",
+       "name": "execute_tool fetch_url",
+       "kind": 1,
+       "startTimeUnixNano": "1791590431000000000",
+       "endTimeUnixNano": "1791590432000000000",
+       "status": {
+        "code": 1
+       },
+       "attributes": [
+        {
+         "key": "gen_ai.operation.name",
+         "value": {
+          "stringValue": "execute_tool"
+         }
+        },
+        {
+         "key": "gen_ai.tool.name",
+         "value": {
+          "stringValue": "fetch_url"
+         }
+        },
+        {
+         "key": "gen_ai.tool.call.arguments",
+         "value": {
+          "stringValue": "{\"url\": \"https://status.vendor.test/v1/incidents\", \"since\": \"24h\"}"
+         }
+        },
+        {
+         "key": "gen_ai.tool.call.result",
+         "value": {
+          "stringValue": "HTTP 200 []"
+         }
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

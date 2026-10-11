@@ -1,0 +1,25 @@
+[
+  {"role": "user", "content": "Apply the pending database migration."},
+  {"role": "assistant", "content": [
+    {"type": "text", "text": "Running the migration."},
+    {"type": "tool_use", "id": "m1", "name": "run_migration", "input": {"version": "0042"}}
+  ], "usage": {"input_tokens": 1200, "output_tokens": 80}},
+  {"role": "user", "content": [
+    {"type": "tool_result", "tool_use_id": "m1", "is_error": true, "content": "lock timeout: table orders is locked"}
+  ]},
+  {"role": "assistant", "content": [
+    {"type": "tool_use", "id": "m2", "name": "run_migration", "input": {"version": "0042", "lock_timeout_s": 30}}
+  ], "usage": {"input_tokens": 1300, "output_tokens": 60}},
+  {"role": "user", "content": [
+    {"type": "tool_result", "tool_use_id": "m2", "is_error": true, "content": "lock timeout: table orders is locked"}
+  ]},
+  {"role": "assistant", "content": [
+    {"type": "tool_use", "id": "m3", "name": "run_migration", "input": {"version": "0042", "lock_timeout_s": 120}}
+  ], "usage": {"input_tokens": 1400, "output_tokens": 60}},
+  {"role": "user", "content": [
+    {"type": "tool_result", "tool_use_id": "m3", "is_error": true, "content": [{"type": "text", "text": "lock timeout: table orders is locked"}]}
+  ]},
+  {"role": "assistant", "content": [
+    {"type": "text", "text": "The migration could not be completed because the orders table stays locked. Someone needs to release the lock first."}
+  ], "usage": {"input_tokens": 1500, "output_tokens": 50}}
+]

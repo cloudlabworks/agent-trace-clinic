@@ -1,0 +1,177 @@
+{
+ "resourceSpans": [
+  {
+   "resource": {
+    "attributes": [
+     {
+      "key": "service.name",
+      "value": {
+       "stringValue": "demo-agent"
+      }
+     }
+    ]
+   },
+   "scopeSpans": [
+    {
+     "scope": {
+      "name": "demo-instrumentation"
+     },
+     "spans": [
+      {
+       "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+       "spanId": "000000000000000b",
+       "parentSpanId": "0000000000000001",
+       "name": "chat demo-model",
+       "kind": 3,
+       "startTimeUnixNano": "1791590410000000000",
+       "endTimeUnixNano": "1791590411000000000",
+       "status": {
+        "code": 1
+       },
+       "attributes": [
+        {
+         "key": "gen_ai.operation.name",
+         "value": {
+          "stringValue": "chat"
+         }
+        },
+        {
+         "key": "gen_ai.provider.name",
+         "value": {
+          "stringValue": "openai"
+         }
+        },
+        {
+         "key": "gen_ai.request.model",
+         "value": {
+          "stringValue": "demo-model"
+         }
+        },
+        {
+         "key": "gen_ai.usage.input_tokens",
+         "value": {
+          "intValue": "250"
+         }
+        },
+        {
+         "key": "gen_ai.usage.output_tokens",
+         "value": {
+          "intValue": "20"
+         }
+        },
+        {
+         "key": "gen_ai.output.messages",
+         "value": {
+          "stringValue": "[{\"role\":\"assistant\",\"parts\":[{\"type\":\"tool_call\",\"id\":\"w1\",\"name\":\"get_weather\",\"arguments\":{\"city\":\"Paris\"}}],\"finish_reason\":\"tool_call\"}]"
+         }
+        }
+       ]
+      },
+      {
+       "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+       "spanId": "000000000000000c",
+       "name": "execute_tool get_weather",
+       "kind": 1,
+       "startTimeUnixNano": "1791590411000000000",
+       "endTimeUnixNano": "1791590412000000000",
+       "status": {
+        "code": 1
+       },
+       "attributes": [
+        {
+         "key": "gen_ai.operation.name",
+         "value": {
+          "stringValue": "execute_tool"
+         }
+        },
+        {
+         "key": "gen_ai.tool.name",
+         "value": {
+          "stringValue": "get_weather"
+         }
+        },
+        {
+         "key": "gen_ai.tool.call.arguments",
+         "value": {
+          "stringValue": "{\"city\": \"Paris\"}"
+         }
+        },
+        {
+         "key": "gen_ai.tool.call.result",
+         "value": {
+          "kvlistValue": {
+           "values": [
+            {
+             "key": "temp_c",
+             "value": {
+              "intValue": "14"
+             }
+            },
+            {
+             "key": "conditions",
+             "value": {
+              "stringValue": "rainy"
+             }
+            }
+           ]
+          }
+         }
+        }
+       ]
+      },
+      {
+       "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+       "spanId": "000000000000000d",
+       "parentSpanId": "0000000000000001",
+       "name": "chat demo-model",
+       "kind": 3,
+       "startTimeUnixNano": "1791590420000000000",
+       "endTimeUnixNano": "1791590421000000000",
+       "status": {
+        "code": 1
+       },
+       "attributes": [
+        {
+         "key": "gen_ai.operation.name",
+         "value": {
+          "stringValue": "chat"
+         }
+        },
+        {
+         "key": "gen_ai.provider.name",
+         "value": {
+          "stringValue": "openai"
+         }
+        },
+        {
+         "key": "gen_ai.request.model",
+         "value": {
+          "stringValue": "demo-model"
+         }
+        },
+        {
+         "key": "gen_ai.usage.input_tokens",
+         "value": {
+          "intValue": "290"
+         }
+        },
+        {
+         "key": "gen_ai.usage.output_tokens",
+         "value": {
+          "intValue": "25"
+         }
+        },
+        {
+         "key": "gen_ai.output.messages",
+         "value": {
+          "stringValue": "[{\"role\":\"assistant\",\"parts\":[{\"type\":\"text\",\"content\":\"Paris is rainy at 14 C right now.\"}],\"finish_reason\":\"stop\"}]"
+         }
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,14 @@
+[
+  {"role": "system", "content": "You are a deployment assistant."},
+  {"role": "user", "content": "Bump the cache TTL to 600 seconds in staging and confirm it took effect."},
+  {"role": "assistant", "content": null,
+   "tool_calls": [{"id": "call_s", "type": "function", "function": {"name": "set_config", "arguments": "{\"env\": \"staging\", \"key\": \"cache_ttl\", \"value\": 600}"}}],
+   "usage": {"prompt_tokens": 700, "completion_tokens": 40}},
+  {"role": "tool", "tool_call_id": "call_s", "content": "{\"ok\": true, \"error\": null, \"previous\": 300}"},
+  {"role": "assistant", "content": null,
+   "tool_calls": [{"id": "call_g", "type": "function", "function": {"name": "get_config", "arguments": "{\"env\": \"staging\", \"key\": \"cache_ttl\"}"}}],
+   "usage": {"prompt_tokens": 760, "completion_tokens": 30}},
+  {"role": "tool", "tool_call_id": "call_g", "content": "{\"key\": \"cache_ttl\", \"value\": 600}"},
+  {"role": "assistant", "content": "The staging cache TTL now reads back as 600 seconds (it was 300).",
+   "usage": {"prompt_tokens": 820, "completion_tokens": 30}}
+]

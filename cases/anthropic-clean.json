@@ -1,0 +1,16 @@
+[
+  {"role": "user", "content": "Roll out config v7 to staging and check it."},
+  {"role": "assistant", "content": [
+    {"type": "text", "text": "Deploying config v7 to staging."},
+    {"type": "tool_use", "id": "d1", "name": "deploy_config", "input": {"env": "staging", "version": "v7"}}
+  ], "usage": {"input_tokens": 800, "output_tokens": 50}},
+  {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "d1", "content": "rollout finished: 3/3 pods updated"}]},
+  {"role": "assistant", "content": [
+    {"type": "text", "text": "Deployed. Checking the health endpoint now."},
+    {"type": "tool_use", "id": "h1", "name": "http_get", "input": {"env": "staging", "path": "/healthz"}}
+  ], "usage": {"input_tokens": 880, "output_tokens": 50}},
+  {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "h1", "is_error": false, "content": "200 OK {\"config_version\": \"v7\"}"}]},
+  {"role": "assistant", "content": [
+    {"type": "text", "text": "Staging reports config_version v7 on the health endpoint with status 200."}
+  ], "usage": {"input_tokens": 960, "output_tokens": 30}}
+]

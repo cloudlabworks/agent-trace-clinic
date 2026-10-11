@@ -1,0 +1,18 @@
+[
+  {"role": "system", "content": "You are a support assistant. Use search_docs to answer questions about the product."},
+  {"role": "user", "content": "What is the API rate limit for the free tier?"},
+  {"role": "assistant", "content": null,
+   "tool_calls": [{"id": "call_1", "type": "function", "function": {"name": "search_docs", "arguments": "{\"query\":\"rate limit\",\"tier\":\"free\"}"}}],
+   "usage": {"prompt_tokens": 420, "completion_tokens": 30}},
+  {"role": "tool", "tool_call_id": "call_1", "content": "No results."},
+  {"role": "assistant", "content": null,
+   "tool_calls": [{"id": "call_2", "type": "function", "function": {"name": "search_docs", "arguments": "{\"tier\": \"free\", \"query\": \"rate limit\"}"}}],
+   "usage": {"prompt_tokens": 470, "completion_tokens": 30}},
+  {"role": "tool", "tool_call_id": "call_2", "content": "No results."},
+  {"role": "assistant", "content": null,
+   "tool_calls": [{"id": "call_3", "type": "function", "function": {"name": "search_docs", "arguments": "{\"query\": \"rate limit\", \"tier\": \"free\"}"}}],
+   "usage": {"prompt_tokens": 510, "completion_tokens": 30}},
+  {"role": "tool", "tool_call_id": "call_3", "content": "No results."},
+  {"role": "assistant", "content": "I could not find the rate limit in the docs. Please check the pricing page or contact support.",
+   "usage": {"prompt_tokens": 560, "completion_tokens": 40}}
+]

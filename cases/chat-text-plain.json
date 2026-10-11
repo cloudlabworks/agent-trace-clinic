@@ -1,0 +1,5 @@
+[
+  {"role": "system", "content": "You summarise incident notes."},
+  {"role": "user", "content": "Summarise last week's incidents in one line."},
+  {"role": "assistant", "content": "Three short outages last week, each under an hour, all traced to one expired certificate."}
+]

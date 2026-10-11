@@ -1,0 +1,8 @@
+{"role": "user", "content": "Back up the orders table before the migration."}
+{"role": "assistant", "content": null, "tool_calls": [{"id": "b1", "type": "function", "function": {"name": "run_backup", "arguments": "{\"table\": \"orders\", \"target\": \"backup-store/orders\"}"}}], "usage": {"prompt_tokens": 500, "completion_tokens": 50}}
+{"role": "tool", "tool_call_id": "b1", "content": "Error: permission denied writing to backup-store/orders"}
+{"role": "assistant", "content": null, "tool_calls": [{"id": "b2", "type": "function", "function": {"name": "run_backup", "arguments": "{\"target\": \"backup-store/orders\", \"table\": \"orders\"}"}}], "usage": {"prompt_tokens": 580, "completion_tokens": 50}}
+{"role": "tool", "tool_call_id": "b2", "content": "Error: permission denied writing to backup-store/orders"}
+{"role": "assistant", "content": "The backup store rejects writes. Trying the local snapshot tool instead.", "tool_calls": [{"id": "b3", "type": "function", "function": {"name": "snapshot_table", "arguments": "{\"table\": \"orders\"}"}}], "usage": {"prompt_tokens": 660, "completion_tokens": 70}}
+{"role": "tool", "tool_call_id": "b3", "content": "{\"snapshot\": \"orders-snap-01\", \"rows\": 18234}"}
+{"role": "assistant", "content": "A local snapshot of orders exists (orders-snap-01, 18,234 rows). The backup store still rejects writes; that needs a permission change before the migration.", "usage": {"prompt_tokens": 760, "completion_tokens": 60}}

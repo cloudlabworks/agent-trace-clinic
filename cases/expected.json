@@ -1,0 +1,115 @@
+{
+  "_about": "Expected result for every case, written from each case's design (see the Cases table in README.md), not copied from detector output. Steps are 0-based step indices. evidence_contains is a substring of the finding's evidence. Findings must match exactly: same set of (id, severity, steps), nothing extra.",
+
+  "openai-tool-loop.json": {
+    "format": "openai", "container": "json", "step_count": 9,
+    "findings": [
+      {"id": "tool_loop", "severity": "high", "steps": [2, 4, 6], "evidence_contains": "search_docs({\"query\":\"rate limit\",\"tier\":\"free\"}) called 3 times"},
+      {"id": "token_totals", "severity": "info", "steps": [2, 4, 6, 8], "evidence_contains": "in 1,960, out 130, total 2,090 over 4 model calls"}
+    ]
+  },
+
+  "openai-unproven-completion.json": {
+    "format": "openai", "container": "json", "step_count": 8,
+    "findings": [
+      {"id": "unproven_completion", "severity": "high", "steps": [7], "evidence_contains": "Fixed."},
+      {"id": "token_totals", "severity": "info", "steps": [1, 4, 7], "evidence_contains": "in 3,370, out 230, total 3,600 over 3 model calls"}
+    ]
+  },
+
+  "openai-clean.json": {
+    "format": "openai", "container": "json", "step_count": 7,
+    "findings": [
+      {"id": "token_totals", "severity": "info", "steps": [2, 4, 6], "evidence_contains": "in 2,280, out 100, total 2,380 over 3 model calls"}
+    ]
+  },
+
+  "openai-unhandled-error.jsonl": {
+    "format": "openai", "container": "jsonl", "step_count": 9,
+    "findings": [
+      {"id": "unhandled_tool_error", "severity": "medium", "steps": [2], "evidence_contains": "run_backup({\"table\":\"orders\",\"target\":\"backup-store/orders\"}) -> Error"},
+      {"id": "token_totals", "severity": "info", "steps": [1, 3, 5, 8], "evidence_contains": "in 2,500, out 230, total 2,730 over 4 model calls"}
+    ]
+  },
+
+  "anthropic-retry-storm.json": {
+    "format": "anthropic", "container": "json", "step_count": 9,
+    "findings": [
+      {"id": "retry_storm", "severity": "high", "steps": [3, 5, 7], "evidence_contains": "run_migration failed 3 times; first error: lock timeout"},
+      {"id": "token_totals", "severity": "info", "steps": [1, 4, 6, 8], "evidence_contains": "in 5,400, out 250, total 5,650 over 4 model calls"}
+    ]
+  },
+
+  "anthropic-context-growth.json": {
+    "format": "anthropic", "container": "json", "step_count": 10,
+    "findings": [
+      {"id": "context_growth", "severity": "high", "steps": [1, 3, 5, 7, 9], "evidence_contains": "tokens_in 2,000 -> 16,900 (8.5x) over 5 model calls"},
+      {"id": "token_totals", "severity": "info", "steps": [1, 3, 5, 7, 9], "evidence_contains": "in 43,900, out 250, total 44,150 over 5 model calls"}
+    ]
+  },
+
+  "anthropic-clean.json": {
+    "format": "anthropic", "container": "json", "step_count": 8,
+    "findings": [
+      {"id": "token_totals", "severity": "info", "steps": [1, 4, 7], "evidence_contains": "in 2,640, out 130, total 2,770 over 3 model calls"}
+    ]
+  },
+
+  "anthropic-false-done-after-error.json": {
+    "format": "anthropic", "container": "json", "step_count": 4,
+    "findings": [
+      {"id": "unproven_completion", "severity": "high", "steps": [3], "evidence_contains": "Done, the payments worker has been restarted."},
+      {"id": "token_totals", "severity": "info", "steps": [1, 3], "evidence_contains": "in 1,250, out 60, total 1,310 over 2 model calls"}
+    ]
+  },
+
+  "anthropic-unproven.jsonl": {
+    "format": "anthropic", "container": "jsonl", "step_count": 5,
+    "findings": [
+      {"id": "unproven_completion", "severity": "high", "steps": [4], "evidence_contains": "CI is green, so I merged the PR."}
+    ]
+  },
+
+  "otel-tool-loop.json": {
+    "format": "otel-genai", "container": "json", "step_count": 13,
+    "findings": [
+      {"id": "tool_loop", "severity": "high", "steps": [1, 4, 7, 10], "evidence_contains": "fetch_url({\"since\":\"24h\""},
+      {"id": "token_totals", "severity": "info", "steps": [0, 3, 6, 9, 12], "evidence_contains": "in 1,900, out 140, total 2,040 over 5 model calls"}
+    ]
+  },
+
+  "otel-retry-storm.json": {
+    "format": "otel-genai", "container": "json", "step_count": 13,
+    "findings": [
+      {"id": "tool_loop", "severity": "high", "steps": [1, 4, 7], "evidence_contains": "db_query({\"sql\":\"SELECT count(*) FROM orders\"}) called 3 times"},
+      {"id": "retry_storm", "severity": "high", "steps": [2, 5, 8], "evidence_contains": "db_query failed 3 times; first error: timeout: query exceeded 30s"},
+      {"id": "unhandled_tool_error", "severity": "medium", "steps": [2, 5], "evidence_contains": "-> timeout: query exceeded 30s"},
+      {"id": "token_totals", "severity": "info", "steps": [0, 3, 6, 9, 12], "evidence_contains": "in 3,010, out 170, total 3,180 over 5 model calls"}
+    ]
+  },
+
+  "otel-clean.json": {
+    "format": "otel-genai", "container": "json", "step_count": 4,
+    "findings": [
+      {"id": "token_totals", "severity": "info", "steps": [0, 3], "evidence_contains": "in 540, out 45, total 585 over 2 model calls"}
+    ]
+  },
+
+  "otel-growth-unproven.jsonl": {
+    "format": "otel-genai", "container": "jsonl", "step_count": 7,
+    "findings": [
+      {"id": "context_growth", "severity": "medium", "steps": [0, 3, 6], "evidence_contains": "tokens_in 3,000 -> 6,900 (2.3x) over 3 model calls"},
+      {"id": "unproven_completion", "severity": "high", "steps": [6], "evidence_contains": "All tests passed and the cart bug is fixed."},
+      {"id": "token_totals", "severity": "info", "steps": [0, 3, 6], "evidence_contains": "in 14,700, out 360, total 15,060 over 3 model calls"}
+    ]
+  },
+
+  "chat-text-plain.json": {
+    "format": "chat-text", "container": "json", "step_count": 3,
+    "findings": []
+  },
+
+  "unknown-format.json": { "error": "Unrecognised trace format" },
+  "mixed-formats.json": { "error": "mix OpenAI tool_calls and Anthropic" },
+  "bad-line.jsonl": { "error": "line 3 is not valid JSON" }
+}

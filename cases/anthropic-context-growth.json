@@ -1,0 +1,20 @@
+{
+  "system": "You are an operations assistant.",
+  "messages": [
+    {"role": "user", "content": "Find out why the nightly job was slow this week."},
+    {"role": "assistant", "content": [{"type": "tool_use", "id": "l1", "name": "read_log", "input": {"file": "/var/log/nightly/day1.log"}}],
+     "usage": {"input_tokens": 2000, "output_tokens": 40}},
+    {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "l1", "content": "02:00:01 start\n02:00:02 scan events (full)\n02:41:17 done"}]},
+    {"role": "assistant", "content": [{"type": "tool_use", "id": "l2", "name": "read_log", "input": {"file": "/var/log/nightly/day2.log"}}],
+     "usage": {"input_tokens": 4100, "output_tokens": 40}},
+    {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "l2", "content": "02:00:01 start\n02:00:02 scan events (full)\n02:44:09 done"}]},
+    {"role": "assistant", "content": [{"type": "tool_use", "id": "l3", "name": "read_log", "input": {"file": "/var/log/nightly/day3.log"}}],
+     "usage": {"input_tokens": 1300, "cache_read_input_tokens": 7000, "output_tokens": 40}},
+    {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "l3", "content": "02:00:01 start\n02:00:02 scan events (full)\n02:47:55 done"}]},
+    {"role": "assistant", "content": [{"type": "tool_use", "id": "l4", "name": "read_log", "input": {"file": "/var/log/nightly/day4.log"}}],
+     "usage": {"input_tokens": 12600, "output_tokens": 40}},
+    {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "l4", "content": "02:00:01 start\n02:00:02 scan events (full)\n02:52:30 done"}]},
+    {"role": "assistant", "content": [{"type": "text", "text": "The slow nights all start with a full table scan on events; an index on events.created_at would remove it."}],
+     "usage": {"input_tokens": 16900, "output_tokens": 90}}
+  ]
+}
