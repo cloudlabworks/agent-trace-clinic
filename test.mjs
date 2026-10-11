@@ -46,7 +46,7 @@ const key = (f) => `${f.id}|${f.severity}|${f.steps.join(',')}`;
 // ------------------------------------------------------------------ cases
 
 const expected = JSON.parse(readFileSync(join(casesDir, 'expected.json'), 'utf8'));
-const files = readdirSync(casesDir).filter((f) => f !== 'expected.json' && /\.(json|jsonl)$/.test(f)).sort();
+const files = readdirSync(casesDir).filter((f) => f !== 'expected.json' && f !== 'mast-expected.json' && /\.(json|jsonl)$/.test(f)).sort();
 check('every case file has an expected entry', files.every((f) => f in expected), files.filter((f) => !(f in expected)).join(', '));
 check('every expected entry has a case file', Object.keys(expected).filter((k) => !k.startsWith('_')).every((k) => files.includes(k)));
 

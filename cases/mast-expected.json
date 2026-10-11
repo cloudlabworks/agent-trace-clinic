@@ -1,0 +1,72 @@
+{
+  "_about": "Expected MAST failure modes for each case, written from each case's design (the Cases table in README.md and the trace itself) before any model was run on it. Taxonomy: MAST, Cemri et al., 'Why Do Multi-Agent LLM Systems Fail?', arXiv:2503.13657v3, Appendix A (https://arxiv.org/abs/2503.13657v3). 'expected' is the set a careful annotator should give; exact match compares a model's set with it. 'also_acceptable' lists modes an annotator could defensibly add; a model naming them is not counted as a false positive. 'none' means the trace has no MAST failure (controls, and detector findings with no MAST equivalent). 'n/a' means the input is not a trace the normaliser accepts, so no model is run on it. These traces are single-agent, so the inter-agent modes (FM-2.1 to FM-2.5) rarely apply.",
+
+  "openai-tool-loop.json": {
+    "expected": ["FM-1.3"], "also_acceptable": [], "steps": [2, 4, 6],
+    "why": "search_docs is called three times with identical arguments after each returns 'No results.': unnecessary reiteration of a completed step. The final answer admits it found nothing, so no verification or termination failure."
+  },
+  "openai-unproven-completion.json": {
+    "expected": ["FM-3.2"], "also_acceptable": ["FM-2.6"], "steps": [7],
+    "why": "The agent edits the handler and says 'Fixed. The login test passes now' without running the test: the outcome is never checked. Claiming a test result it never produced is also a gap between what it says and what it did."
+  },
+  "openai-clean.json": {
+    "expected": "none", "also_acceptable": [],
+    "why": "Control: sets the value, reads it back, and reports the read-back."
+  },
+  "openai-unhandled-error.jsonl": {
+    "expected": ["FM-1.3"], "also_acceptable": [], "steps": [1, 3],
+    "why": "After 'permission denied' the agent repeats the identical run_backup call once, which cannot change the outcome. It then adapts (snapshot tool) and reports the remaining problem honestly, so nothing else fails."
+  },
+  "anthropic-retry-storm.json": {
+    "expected": ["FM-1.3"], "also_acceptable": [], "steps": [2, 4, 6],
+    "why": "run_migration is attempted three times against the same lock; only the timeout argument changes, and the lock cause is never addressed. The agent then stops and reports honestly, so the failure is the repetition, not termination or verification."
+  },
+  "anthropic-context-growth.json": {
+    "expected": "none", "also_acceptable": [],
+    "why": "The detector finding (context growth, 8.5x) is a cost and latency problem with no MAST equivalent. Each log read is a different file and the conclusion follows from them."
+  },
+  "anthropic-clean.json": {
+    "expected": "none", "also_acceptable": [],
+    "why": "Control: 'Deployed.' is followed by a health check whose result is reported."
+  },
+  "anthropic-false-done-after-error.json": {
+    "expected": ["FM-3.2"], "also_acceptable": ["FM-2.6"], "steps": [3],
+    "why": "restart_service fails with 'unit payments-worker not found' and the agent still says 'Done, the payments worker has been restarted.' with no check. The claim also contradicts the tool result it just received, which is a reasoning-action mismatch."
+  },
+  "anthropic-unproven.jsonl": {
+    "expected": ["FM-3.3"], "also_acceptable": ["FM-2.6", "FM-1.1", "FM-3.2"], "steps": [3, 4],
+    "why": "The agent did check CI, but read 'pending: 3 of 5 checks running' as green: the check was made and misread. It then claims a merge that no tool call performed, and the task said to merge only once CI is green."
+  },
+  "otel-tool-loop.json": {
+    "expected": ["FM-1.3"], "also_acceptable": [], "steps": [1, 4, 7, 10],
+    "why": "fetch_url is called four times with identical arguments and the same empty result. The final statement matches the result."
+  },
+  "otel-retry-storm.json": {
+    "expected": ["FM-1.3"], "also_acceptable": [], "steps": [1, 4, 7],
+    "why": "The identical db_query is retried three times after timeouts. The agent then switches to the cache and caveats its answer, so verification and termination are fine."
+  },
+  "otel-clean.json": {
+    "expected": "none", "also_acceptable": [],
+    "why": "Control: one tool call, answer matches the result."
+  },
+  "otel-growth-unproven.jsonl": {
+    "expected": ["FM-3.2"], "also_acceptable": ["FM-2.6"], "steps": [6],
+    "why": "Tests fail (41 passed, 2 failed), the agent patches one line and says 'All tests passed' without re-running them. Context growth (2.3x) has no MAST equivalent."
+  },
+  "chat-text-plain.json": {
+    "expected": "none", "also_acceptable": [],
+    "why": "Control: no tools, no claims to check."
+  },
+  "unknown-format.json": {
+    "expected": "n/a", "also_acceptable": [],
+    "why": "Not a trace; the normaliser rejects it."
+  },
+  "mixed-formats.json": {
+    "expected": "n/a", "also_acceptable": [],
+    "why": "Not a valid trace (mixed formats); the normaliser rejects it."
+  },
+  "bad-line.jsonl": {
+    "expected": "n/a", "also_acceptable": [],
+    "why": "Not valid JSONL; the normaliser rejects it."
+  }
+}
