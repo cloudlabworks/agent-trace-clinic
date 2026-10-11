@@ -2,7 +2,7 @@
 //
 // A small language model reads the normalised steps and names MAST failure modes
 // (Cemri et al., "Why Do Multi-Agent LLM Systems Fail?", arXiv:2503.13657v3, Appendix A,
-// https://arxiv.org/abs/2503.13657v3). Its labels are MODEL OPINION: they are kept apart
+// https://arxiv.org/abs/2503.13657v3). The definitions below are paraphrased, not the paper's text. Its labels are MODEL OPINION: they are kept apart
 // from the deterministic detector findings and are never merged into them.
 //
 // Runs in a browser page and under Node. The prompt builder and the output parser are
@@ -14,22 +14,24 @@
 
 export const MAST_SOURCE = 'https://arxiv.org/abs/2503.13657v3';
 
-// The 14 MAST failure modes, names from Appendix A of v3; definitions not reproduced.
+// The 14 MAST failure modes. Ids, names and categories follow the paper.
+// Failure modes from Cemri et al., 'Why Do Multi-Agent LLM Systems Fail?', arXiv:2503.13657 (MAST).
+// Definitions paraphrased; see the paper for the authors' wording.
 export const MAST_MODES = [
-  { id: 'FM-1.1', category: 'System design issues', name: 'Disobey task specification', definition: '[FM-1.1 definition: see MAST v3 Appendix A (CC BY-NC-ND 4.0); text not reproduced here]' },
-  { id: 'FM-1.2', category: 'System design issues', name: 'Disobey role specification', definition: '[FM-1.2 definition: see MAST v3 Appendix A (CC BY-NC-ND 4.0); text not reproduced here]' },
-  { id: 'FM-1.3', category: 'System design issues', name: 'Step repetition', definition: '[FM-1.3 definition: see MAST v3 Appendix A (CC BY-NC-ND 4.0); text not reproduced here]' },
-  { id: 'FM-1.4', category: 'System design issues', name: 'Loss of conversation history', definition: '[FM-1.4 definition: see MAST v3 Appendix A (CC BY-NC-ND 4.0); text not reproduced here]' },
-  { id: 'FM-1.5', category: 'System design issues', name: 'Unaware of termination conditions', definition: "[FM-1.5 definition: see MAST v3 Appendix A (CC BY-NC-ND 4.0); text not reproduced here]" },
-  { id: 'FM-2.1', category: 'Inter-agent misalignment', name: 'Conversation reset', definition: '[FM-2.1 definition: see MAST v3 Appendix A (CC BY-NC-ND 4.0); text not reproduced here]' },
-  { id: 'FM-2.2', category: 'Inter-agent misalignment', name: 'Fail to ask for clarification', definition: '[FM-2.2 definition: see MAST v3 Appendix A (CC BY-NC-ND 4.0); text not reproduced here]' },
-  { id: 'FM-2.3', category: 'Inter-agent misalignment', name: 'Task derailment', definition: '[FM-2.3 definition: see MAST v3 Appendix A (CC BY-NC-ND 4.0); text not reproduced here]' },
-  { id: 'FM-2.4', category: 'Inter-agent misalignment', name: 'Information withholding', definition: '[FM-2.4 definition: see MAST v3 Appendix A (CC BY-NC-ND 4.0); text not reproduced here]' },
-  { id: 'FM-2.5', category: 'Inter-agent misalignment', name: "Ignored other agent's input", definition: '[FM-2.5 definition: see MAST v3 Appendix A (CC BY-NC-ND 4.0); text not reproduced here]' },
-  { id: 'FM-2.6', category: 'Inter-agent misalignment', name: 'Reasoning-action mismatch', definition: '[FM-2.6 definition: see MAST v3 Appendix A (CC BY-NC-ND 4.0); text not reproduced here]' },
-  { id: 'FM-3.1', category: 'Task verification', name: 'Premature termination', definition: '[FM-3.1 definition: see MAST v3 Appendix A (CC BY-NC-ND 4.0); text not reproduced here]' },
-  { id: 'FM-3.2', category: 'Task verification', name: 'No or incomplete verification', definition: '[FM-3.2 definition: see MAST v3 Appendix A (CC BY-NC-ND 4.0); text not reproduced here]' },
-  { id: 'FM-3.3', category: 'Task verification', name: 'Incorrect verification', definition: '[FM-3.3 definition: see MAST v3 Appendix A (CC BY-NC-ND 4.0); text not reproduced here]' },
+  { id: 'FM-1.1', category: 'System design issues', name: 'Disobey task specification', definition: 'The agent breaks a rule or requirement that the task set out, so the result is wrong or worse than it should be.' },
+  { id: 'FM-1.2', category: 'System design issues', name: 'Disobey role specification', definition: "An agent steps outside the duties and limits of the role it was given, and may end up doing another agent's job." },
+  { id: 'FM-1.3', category: 'System design issues', name: 'Step repetition', definition: 'Work that is already finished gets done again for no reason, which can slow the task down or introduce mistakes.' },
+  { id: 'FM-1.4', category: 'System design issues', name: 'Loss of conversation history', definition: 'Part of the context is cut off without warning, so the agent ignores the latest exchanges and acts as if the conversation were back at an earlier point.' },
+  { id: 'FM-1.5', category: 'System design issues', name: 'Unaware of termination conditions', definition: 'The agents miss or misread the signs that their exchange should stop, so they may keep going after they ought to have finished.' },
+  { id: 'FM-2.1', category: 'Inter-agent misalignment', name: 'Conversation reset', definition: 'A dialogue starts over without warning or good reason, and the context and headway built up so far may be thrown away.' },
+  { id: 'FM-2.2', category: 'Inter-agent misalignment', name: 'Fail to ask for clarification', definition: 'Given input that is ambiguous or has gaps, the agent carries on instead of asking for what it lacks, and may act wrongly as a result.' },
+  { id: 'FM-2.3', category: 'Inter-agent misalignment', name: 'Task derailment', definition: 'The agent drifts away from what the task is actually for, and what it does may stop being relevant or useful.' },
+  { id: 'FM-2.4', category: 'Inter-agent misalignment', name: 'Information withholding', definition: 'An agent keeps to itself facts or findings that matter, when passing them on would have changed what the other agents decide.' },
+  { id: 'FM-2.5', category: 'Inter-agent misalignment', name: "Ignored other agent's input", definition: 'Suggestions or information from fellow agents are brushed aside or given too little weight, which can mean worse choices and wasted chances to work together.' },
+  { id: 'FM-2.6', category: 'Inter-agent misalignment', name: 'Reasoning-action mismatch', definition: 'What the agent does differs from what its own reasoning said it would do, so its behaviour can be surprising or unwanted.' },
+  { id: 'FM-3.1', category: 'Task verification', name: 'Premature termination', definition: 'The conversation or task is stopped too soon, while needed information is still unshared or goals are still unmet, and the result may be partial or wrong.' },
+  { id: 'FM-3.2', category: 'Task verification', name: 'No or incomplete verification', definition: "The task's results or the system's outputs are not checked, or only partly checked, so mistakes and contradictions can slip through unnoticed." },
+  { id: 'FM-3.3', category: 'Task verification', name: 'Incorrect verification', definition: 'Key facts or choices are checked along the way, but not thoroughly enough or not against other sources, so the system can be left with mistakes or weak spots.' },
 ];
 
 const MODE_BY_ID = new Map(MAST_MODES.map((m) => [m.id, m]));

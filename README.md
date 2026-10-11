@@ -199,7 +199,8 @@ Both are quiet under the new rule. Real token counts differ from the stub's esti
 - **Expected findings come from ground truth only.**
   - `scripts/patient-expected.mjs` maps each fault to the detector that names it: tool_loop to `tool_loop`, retry_storm to `retry_storm`, unproven_done to `unproven_completion`, context_growth to `context_growth`, forgotten_instruction to `forgotten_instruction`, clean to none.
   - The expected steps come from the record's `expected_clinic.steps`.
-  - forgotten_instruction is the exception. The patient predates the detector, so its `expected_clinic` names no detector, and its `steps` list the model calls made without the instruction. The steps expected here are the tool calls the ground truth's `notes` name ("step 7: update_ticket without the required label").
+  - forgotten_instruction is the exception. The imported records (patient `b645f62`) predate the detector, so their `expected_clinic` names no detector, and their `steps` list the model calls made without the instruction. The steps expected here are the tool calls the ground truth's `notes` name ("step 7: update_ticket without the required label").
+  - From patient commit `964c597` on, the record names `forgotten_instruction` and those tool-call steps directly. `deriveExpected` accepts both forms and gives the same expected findings for each; the traces themselves are byte-identical.
   - `cases/patient/expected.json` is written by that mapping, and `test.mjs` checks it still equals the mapping applied to each record.
 - **What is compared.**
   - Exactly one primary finding with exactly the ground-truth steps. The ground truth has no severity, so severity is not compared.
@@ -245,7 +246,7 @@ Agreement with ground truth (`node test.mjs --patient-table`):
 
 - **The traces come from a stub model** that follows a fixed plan. It shows that the detectors find what the harness injected. It does not show how often a real model's version of each fault is caught.
 - **The forgotten_instruction detector was written knowing the patient's instruction.** That instruction is the `required_text` form. The other 15 patient traces use the same 40-line system prompt, which holds about ten unquoted "never" and "do not" sentences plus a mid-sentence `says only "see the docs"`, and none of them fires. This is the false-alarm check the detector was built against.
-- **The patient's own agreement test was written before this detector.** It still lists forgotten_instruction as a known miss, and its expected steps for that fault are the model calls, not the tool call. It passes, because a listed mismatch still occurs, but it needs updating in that repository.
+- **The patient's own agreement test now agrees too.** As of patient commit `964c597` it expects forgotten_instruction at the violating tool call, its known-mismatch table is empty, and its context-growth margin test checks the 2x-and-300-per-call rule rather than 2x alone.
 
 ### MAST-Data
 
@@ -267,7 +268,9 @@ The paper's dataset is published on Hugging Face as [mcemri/MAST-Data](https://h
 | Inter-agent misalignment | FM-2.1 Conversation reset, FM-2.2 Fail to ask for clarification, FM-2.3 Task derailment, FM-2.4 Information withholding, FM-2.5 Ignored other agent's input, FM-2.6 Reasoning-action mismatch |
 | Task verification | FM-3.1 Premature termination, FM-3.2 No or incomplete verification, FM-3.3 Incorrect verification |
 
-`labeller.js` carries the paper's definition of each mode, word for word, and puts all 14 in the prompt. MAST was built from multi-agent traces. The cases here are single-agent, so FM-2.1 to FM-2.5 rarely apply.
+Failure modes from Cemri et al., 'Why Do Multi-Agent LLM Systems Fail?', arXiv:2503.13657 (MAST). Definitions paraphrased; see the paper for the authors' wording.
+
+`labeller.js` keeps the paper's ids, names and categories and gives each mode a one-sentence definition in this project's own words. The paper is CC BY-NC-ND 4.0 and this repository is MIT, so its text is not copied; the paraphrases keep each definition's meaning. All 14 go in the prompt. (The MAST-Data dataset is CC BY 4.0, see [MAST-Data](#mast-data) above; no traces from it are included.) MAST was built from multi-agent traces. The cases here are single-agent, so FM-2.1 to FM-2.5 rarely apply.
 
 ### What it does
 
@@ -296,7 +299,7 @@ node run.mjs --model onnx-community/Qwen3-0.6B-ONNX --revision 1e0a4a196ecabdf9a
 node table.mjs     # the table below, re-scored with the current parser, and the pick rule
 ```
 
-`run.mjs` calls `labeller.js` itself, so the bake-off measures the same prompt, generation call and parser that the Clinic ships. Weights are cached outside the repository. Each result in `bakeoff/results/` records:
+`run.mjs` calls `labeller.js` itself, so the bake-off measures the same prompt, generation call and parser that the Clinic ships. The exception is the prompt of the older rows: every variant up to v3 ran with the paper's own definitions in the prompt, before they were replaced by paraphrases (see Prompt variants). Weights are cached outside the repository. Each result in `bakeoff/results/` records:
 
 - the model revision sha, verified from the revision-keyed cache path;
 - the files the dtype needs;
@@ -330,6 +333,7 @@ Conditions of the runs:
 | onnx-community/Qwen3-0.6B-ONNX @ 1e0a4a1 | q4 | v3-plain | 0.93 GB | 1.0 s | 3.3 s / 7.6 s | 1.9 s | 0 | 0 | 2 | 7 |
 | onnx-community/Qwen3-0.6B-ONNX @ 1e0a4a1 | q4 | v3-thinking | 0.93 GB | 1.0 s | 42.7 s / 60.2 s | 1.8 s | 4 | 1 | 0 | 6 |
 | onnx-community/Qwen3-0.6B-ONNX @ 1e0a4a1 | q4 | v3-thinking-rp1.1 | 0.93 GB | 1.0 s | 38.3 s / 56.9 s | 1.8 s | 3 | 0 | 0 | 8 |
+| onnx-community/Qwen3-0.6B-ONNX @ 1e0a4a1 | q4 | v4-thinking | 0.93 GB | 1.2 s | 49.5 s / 56.8 s | 1.9 s | 3 | 0 | 1 | 8 |
 | HuggingFaceTB/SmolLM3-3B-ONNX @ af50613 | q4 | v2-plain | 2.85 GB | 6.1 s | 9.4 s / 11.0 s | 3.9 s | 0 | 0 | 0 | 14 |
 | HuggingFaceTB/SmolLM3-3B-ONNX @ af50613 | q4 | v3-plain | 2.85 GB | 4.7 s | 9.1 s / 11.7 s | 4.4 s | 0 | 0 | 0 | 14 |
 | HuggingFaceTB/SmolLM3-3B-ONNX @ af50613 | q4 | v3-thinking | 2.85 GB | 1.6 s | 49.3 s / 54.4 s | 4.4 s | 0 | 0 | 0 | 14 |
@@ -351,6 +355,7 @@ All variants are kept, including the ones that scored zero.
 - **v2-plain.** v2 without the prefill. These files predate prompt hashing.
 - **v3.** Lists the 14 allowed ids and uses an example (`FM-2.4` at step 5) that matches no expected label.
 - **rp1.1.** Adds a repetition penalty of 1.1.
+- **v4.** v3 with the paper's definitions replaced by this project's paraphrases, which is the prompt the Clinic now ships. Run on 2026-10-11 for Qwen3-0.6B `q4` with thinking on only, from cached weights. SmolLM3 was not re-run: its weights are not cached here, and it gave no usable answer under v2 or v3.
 
 The table re-parses every saved output with the current parser. The quote-relocation rule was added after the v2-plain runs, so Qwen3's v2-plain row differs a little from what that run printed.
 
@@ -361,6 +366,7 @@ No candidate was usable under the rule, so the rule's last clause applies: the s
 - **Thinking is on.** With thinking on, Qwen3 named no failures on the five clean traces, with or without the repetition penalty. With thinking off, it named failures on 2 of them, which is worse than no opinion. Without the penalty it also got more right.
 - **On the clean traces it answered `[]` on 3** and gave no opinion on the other 2.
 - **It is weak even so.** It names an expected mode on 1 of the 9 failure cases. On 6 of 14 cases it gives no opinion. In all 6 it was still reasoning, often in a loop, when it reached the 1024-token cap.
+- **Those figures are the v3 run, with the paper's wording in the prompt.** The prompt the Clinic ships (v4, paraphrased definitions) scored lower on the same 14 cases: exact 3 (v3: 4), any-overlap 0 of 9 (v3: 1), one control false positive, FM-3.1 on `openai-clean.json` (v3: none), and no model opinion on 8 (v3: 6; 7 of the 8 hit the 1024-token cap). On the clean traces it answered `[]` on 3. Decoding is greedy, so the change comes from the wording. On 14 cases a shift of one or two is what a reworded prompt does to a 0.6B model; it does not show that either wording is better in general. The pick stands, since the model missed the bar with either prompt.
 - **It is slow on CPU.** A trace takes about 10 to 60 s on this machine's CPU, with a median of 43 s. Treat the model pass as experimental.
 - **`q4f16` was checked on CPU.** With thinking off, it gave the same output as `q4` on all 14 cases, character for character. The thinking runs used `q4`, so the browser's WebGPU default (`q4f16` with thinking on) has not been measured.
 - **The browser path has not been run end to end.** The pinned CDN bundle is checked: it is an ES module, it exports what `labeller.js` uses, and it is byte-identical to the npm package's `transformers.min.js`.
