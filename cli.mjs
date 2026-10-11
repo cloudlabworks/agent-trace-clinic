@@ -118,7 +118,7 @@ function main() {
     }
     throw e;
   }
-  const findings = runDetectors(result.steps);
+  const findings = runDetectors(result.steps, { instructions: result.instructions });
   if (opts.json) {
     console.log(JSON.stringify({ format: result.format, container: result.container, steps: result.steps, findings, usage: u }, null, 2));
   } else {

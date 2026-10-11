@@ -14,6 +14,12 @@
 //     tokens_in, tokens_out, error }
 // args is a canonical JSON string (keys sorted, no whitespace) or null.
 // Tokens are null when the trace does not record them; nothing is estimated.
+//
+// System/developer instructions travel beside the steps, never as extra steps
+// (extra steps would shift every step index):
+//   instructions: [{ step, text, per_call }]
+// step is the first step the text applies to; per_call is true for OTel
+// gen_ai.system_instructions, which are recorded per model call.
 
 export class TraceFormatError extends Error {
   constructor(message) {
@@ -103,7 +109,7 @@ function isPlainObject(v) {
 // ---------------------------------------------------------------- entry point
 
 // input: trace text (JSON or JSONL) or an already-parsed value.
-// Returns { format, container, steps }.
+// Returns { format, container, steps, instructions }.
 export function normalise(input) {
   let data;
   let container = 'json';
@@ -117,7 +123,11 @@ export function normalise(input) {
     return finish('otel-genai', container, otelSteps(otlpSpans(data)));
   }
   if (isPlainObject(data) && Array.isArray(data.spans)) data = data.spans;
-  if (isPlainObject(data) && Array.isArray(data.messages)) data = data.messages;
+  let topSystem = null; // Anthropic {system, messages}
+  if (isPlainObject(data) && Array.isArray(data.messages)) {
+    topSystem = systemText(data.system);
+    data = data.messages;
+  }
   // A single message or span on its own (e.g. a one-line JSONL file).
   if (isPlainObject(data) && (typeof data.role === 'string' || isSpanLike(data))) data = [data];
 
@@ -132,7 +142,9 @@ export function normalise(input) {
   if (data.every((m) => isPlainObject(m) && typeof m.role === 'string')) {
     const format = classifyMessages(data);
     const steps = format === 'anthropic' ? anthropicSteps(data) : openaiSteps(data);
-    return finish(format, container, steps);
+    const out = finish(format, container, steps);
+    if (topSystem) out.instructions.unshift({ step: 0, text: topSystem, per_call: false });
+    return out;
   }
   const bad = data.findIndex((m) => !(isPlainObject(m) && (typeof m.role === 'string' || isSpanLike(m))));
   fail(`item ${bad >= 0 ? bad : 0} is neither a chat message (no "role") nor a span (no "attributes"), or the list mixes messages and spans`);
@@ -141,7 +153,31 @@ export function normalise(input) {
 function finish(format, container, steps) {
   if (steps.length === 0) fail(`no steps could be read from this ${format} trace`);
   steps.forEach((s, i) => (s.i = i));
-  return { format, container, steps };
+  const instructions = [];
+  for (const s of steps) {
+    if (s.instructions !== undefined) {
+      instructions.push({ step: s.i, text: s.instructions, per_call: true });
+      delete s.instructions;
+    } else if (s.kind === 'message' && (s.role === 'system' || s.role === 'developer') && s.text.trim() !== '') {
+      instructions.push({ step: s.i, text: s.text, per_call: false });
+    }
+  }
+  return { format, container, steps, instructions };
+}
+
+// System text as a string, from a string, a list of text blocks/parts, or a
+// JSON string holding such a list (OTel gen_ai.system_instructions). null if none.
+export function systemText(v) {
+  v = maybeJSON(v);
+  if (typeof v === 'string') return v.trim() === '' ? null : v;
+  if (Array.isArray(v)) {
+    const t = v
+      .map((p) => (typeof p === 'string' ? p : p && (p.type === undefined || p.type === 'text') ? p.content ?? p.text ?? '' : ''))
+      .filter((x) => typeof x === 'string' && x !== '')
+      .join('\n');
+    return t.trim() === '' ? null : t;
+  }
+  return null;
 }
 
 function step(fields) {
@@ -457,6 +493,8 @@ function otelSteps(spans) {
         .map((p) => p.content ?? '')
         .join('\n');
       steps.push(step({ role: 'assistant', kind: 'message', text }));
+      const sys = systemText(a['gen_ai.system_instructions']);
+      if (sys !== null) steps[from].instructions = sys; // moved out of the step by finish()
       if (!hasToolSpans) {
         for (const p of parts) {
           if (p && p.type === 'tool_call' && typeof p.name === 'string') {

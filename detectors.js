@@ -1,6 +1,7 @@
 // Agent Trace Clinic: deterministic detectors.
-// Pure functions over the step list from normalise.js. No model, no I/O,
-// no Node built-ins. Each returns findings:
+// Pure functions over the step list from normalise.js (forgotten_instruction
+// also reads the instructions normalise() returns beside the steps). No model,
+// no I/O, no Node built-ins. Each returns findings:
 //   { id, severity, steps: [i...], evidence: "short quote", explain, data? }
 // Severity is one of: "high", "medium", "low", "info".
 
@@ -302,6 +303,188 @@ export function detectUnprovenCompletion(steps) {
   return findings;
 }
 
+// ---------------------------------------------------------------- forgotten_instruction
+
+// Understood phrasings (each must start a sentence of the system/developer
+// instructions; see README.md for the exact grammar):
+//   forbidden_tool  Never|Do not|Don't|(You) must not|(You) must never  call|use|run|invoke|execute  [the] TOOL [tool].
+//   tools_only      Only call|use / (You) may only call|use / Use only / Call only  TOOL[, TOOL]* [and|or TOOL] [tools].
+//   forbidden_text  Never|Do not|Don't|(You) must not|(You) must never  VERB ... "LITERAL" ...
+//   required_text   Always|(You) must  ... "LITERAL" ...   (only when the sentence names a tool, see below)
+const NEG = String.raw`(?:never|do not|don't|don’t|(?:you )?must not|(?:you )?must never|you mustn't|mustn't)`;
+const FORBID_TOOL_RE = new RegExp(String.raw`^${NEG} (?:call|use|run|invoke|execute) (?:the )?\x60?([A-Za-z][\w-]*(?:\.[\w-]+)*)\x60?(?: tool)?[.!]?$`, 'i');
+const ONLY_RE = /^(?:only (?:call|use)|(?:you )?may only (?:call|use)|use only|call only) (?:the )?(?:tools? )?(.+?)(?: tools?)?[.!]?$/i;
+const FORBID_TEXT_RE = new RegExp(String.raw`^${NEG} (?:say|write|mention|use|include|output|print|reveal|send|share|type|enter|promise|add|put)\b`, 'i');
+const REQUIRE_RE = /^(?:always|(?:you )?must)\s+(?!not\b|never\b)/i;
+// A sentence with any of these words has a condition or an order the detector does not model; it is skipped.
+const CONDITION_RE = /\b(?:unless|except|if|when|whenever|until|before|after|without|while|otherwise|instead|once|first|then|more than|less than|fewer than|at most|at least|twice|again)\b/i;
+const QUOTED_RE = /"([^"\n]{1,60})"|“([^”\n]{1,60})”|`([^`\n]{1,60})`/g;
+
+// Split instruction text into sentences without breaking inside quotes.
+export function instructionSentences(text) {
+  const out = [];
+  let cur = '';
+  let inStraight = false;
+  let inCurly = false;
+  let inTick = false;
+  const t = String(text ?? '');
+  for (let k = 0; k < t.length; k++) {
+    const ch = t[k];
+    cur += ch;
+    if (ch === '"') inStraight = !inStraight;
+    else if (ch === '“') inCurly = true;
+    else if (ch === '”') inCurly = false;
+    else if (ch === '`') inTick = !inTick;
+    const quoted = inStraight || inCurly || inTick;
+    if (ch === '\n' || (!quoted && /[.!?;]/.test(ch) && (k + 1 >= t.length || /\s/.test(t[k + 1])))) {
+      out.push(cur);
+      cur = '';
+      inStraight = inCurly = inTick = false;
+    }
+  }
+  out.push(cur);
+  return out
+    .map((x) => x.replace(/\s+/g, ' ').trim().replace(/^(?:\d+[.)]|[-*•])\s+/, '').replace(/;$/, '.'))
+    .filter((x) => x !== '' && !/^(?:\d+[.)]|[-*\u2022])$/.test(x));
+}
+
+function literals(sentence) {
+  return [...sentence.matchAll(QUOTED_RE)].map((m) => m[1] ?? m[2] ?? m[3]);
+}
+
+function escapeRe(x) {
+  return x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function containsLiteral(text, lit) {
+  const edge = (c) => (/\w/.test(c) ? '\\b' : '');
+  return new RegExp(`${edge(lit[0])}${escapeRe(lit)}${edge(lit[lit.length - 1])}`, 'i').test(String(text ?? ''));
+}
+
+function argStrings(args) {
+  let v;
+  try {
+    v = JSON.parse(args ?? 'null');
+  } catch {
+    return [];
+  }
+  const out = [];
+  const walk = (x) => {
+    if (typeof x === 'string') out.push(x);
+    else if (Array.isArray(x)) x.forEach(walk);
+    else if (x && typeof x === 'object') Object.values(x).forEach(walk);
+  };
+  walk(v);
+  return out;
+}
+
+// Tools a sentence is about: named exactly, or every word of the tool's name
+// appears in the sentence (allowing -s, -es, -d, -ed, -ing endings).
+function targetTools(sentence, tools) {
+  const words = new Set(sentence.toLowerCase().split(/[^a-z0-9_]+/).filter(Boolean));
+  const has = (w) => [w, `${w}s`, `${w}es`, `${w}d`, `${w}ed`, `${w}ing`, `${w.replace(/e$/, '')}ing`].some((f) => words.has(f));
+  return [...tools].filter((tool) => {
+    if (new RegExp(`(^|[^\\w.-])\x60?${escapeRe(tool)}\x60?($|[^\\w-]|\\.(\\s|$))`).test(sentence)) return true;
+    const nw = nameWords(tool);
+    return nw.length >= 2 && nw.every(has);
+  });
+}
+
+// Parse one sentence into a constraint, or null when it is not understood.
+export function parseConstraint(sentence, tools) {
+  if (CONDITION_RE.test(sentence)) return null;
+  const isTool = (x) => tools.has(x);
+  let m = sentence.match(FORBID_TOOL_RE);
+  if (m && isTool(m[1])) return { kind: 'forbidden_tool', sentence, tools: [m[1]] };
+  m = sentence.match(ONLY_RE);
+  if (m) {
+    const items = m[1].split(/\s*,\s*(?:and |or )?|\s+(?:and|or)\s+/).map((x) => x.replace(/^\x60|\x60$/g, '').trim());
+    if (items.length > 0 && items.every((x) => /^[A-Za-z][\w.-]*$/.test(x) && (isTool(x) || /[_.-]|[a-z][A-Z]/.test(x)))) {
+      return { kind: 'tools_only', sentence, tools: items };
+    }
+    return null;
+  }
+  const lits = literals(sentence);
+  if (lits.length !== 1 || lits[0].trim() === '') return null;
+  const lit = lits[0].trim();
+  if (FORBID_TEXT_RE.test(sentence)) return { kind: 'forbidden_text', sentence, literal: lit, tools: targetTools(sentence, tools) };
+  if (REQUIRE_RE.test(sentence)) {
+    const targets = targetTools(sentence, tools);
+    if (targets.length === 0) return null; // a requirement we cannot tie to a tool call is not checked
+    return { kind: 'required_text', sentence, literal: lit, tools: targets };
+  }
+  return null;
+}
+
+// Instructions from normalise() (ctx.instructions), or else the system and
+// developer messages in the step list.
+function instructionsOf(steps, ctx) {
+  if (ctx && Array.isArray(ctx.instructions)) return ctx.instructions;
+  return steps
+    .filter((s) => s.kind === 'message' && (s.role === 'system' || s.role === 'developer') && s.text.trim() !== '')
+    .map((s) => ({ step: s.i, text: s.text, per_call: false }));
+}
+
+function violates(c, s) {
+  if (c.kind === 'forbidden_tool') return s.kind === 'tool_call' && c.tools.includes(s.tool);
+  if (c.kind === 'tools_only') return s.kind === 'tool_call' && !c.tools.includes(s.tool);
+  if (c.kind === 'forbidden_text') {
+    if (c.tools.length) return s.kind === 'tool_call' && c.tools.includes(s.tool) && argStrings(s.args).some((x) => containsLiteral(x, c.literal));
+    return s.kind === 'message' && s.role === 'assistant' && containsLiteral(s.text, c.literal);
+  }
+  if (c.kind === 'required_text') {
+    return s.kind === 'tool_call' && c.tools.includes(s.tool) && !argStrings(s.args).some((x) => containsLiteral(x, c.literal));
+  }
+  return false;
+}
+
+export function detectForgottenInstructions(steps, ctx = {}) {
+  const instructions = instructionsOf(steps, ctx);
+  if (instructions.length === 0) return [];
+  const tools = new Set(steps.filter((s) => s.kind === 'tool_call' && s.tool !== null).map((s) => s.tool));
+  // Every understood sentence, once, from the first step it applies to.
+  const constraints = new Map();
+  for (const ins of [...instructions].sort((a, b) => a.step - b.step)) {
+    for (const sentence of instructionSentences(ins.text)) {
+      if (constraints.has(sentence)) continue;
+      const c = parseConstraint(sentence, tools);
+      if (c) constraints.set(sentence, { ...c, from: ins.step });
+    }
+  }
+  const perCall = instructions.filter((x) => x.per_call).sort((a, b) => a.step - b.step);
+  const findings = [];
+  for (const c of constraints.values()) {
+    const bad = steps.filter((s) => s.i > c.from && violates(c, s));
+    if (bad.length === 0) continue;
+    // With per-call instructions (OTel), was the sentence still there at each violation?
+    const dropped = bad
+      .filter((s) => {
+        const inForce = perCall.filter((x) => x.step <= s.i).pop();
+        return inForce !== undefined && !instructionSentences(inForce.text).includes(c.sentence);
+      })
+      .map((s) => s.i);
+    const what = {
+      forbidden_tool: `called ${c.tools[0]}`,
+      tools_only: `called ${[...new Set(bad.map((s) => s.tool))].join(', ')}`,
+      forbidden_text: `wrote "${c.literal}"`,
+      required_text: `called ${[...new Set(bad.map((s) => s.tool))].join(', ')} without "${c.literal}"`,
+    }[c.kind];
+    findings.push({
+      id: 'forgotten_instruction',
+      severity: 'high',
+      steps: bad.map((s) => s.i),
+      evidence: quote(c.sentence),
+      explain:
+        `The instructions say: ${quote(c.sentence, 160)} The agent ${what} at step${bad.length > 1 ? 's' : ''} ${bad.map((s) => s.i).join(', ')}. ` +
+        (dropped.length
+          ? `The sentence was no longer in the per-call system instructions in force at step${dropped.length > 1 ? 's' : ''} ${dropped.join(', ')}: it was dropped from what the agent was given.`
+          : 'The sentence was still in the instructions the agent had, so the agent ignored it.'),
+      data: { kind: c.kind, instruction: c.sentence, literal: c.literal ?? null, tools: c.tools, from_step: c.from, dropped_at: dropped },
+    });
+  }
+  return findings;
+}
+
 // ---------------------------------------------------------------- token_totals
 
 export function tokenTotals(steps) {
@@ -336,11 +519,13 @@ export const DETECTORS = [
   detectContextGrowth,
   detectUnhandledErrors,
   detectUnprovenCompletion,
+  detectForgottenInstructions,
   detectTokenTotals,
 ];
 
-export function runDetectors(steps) {
-  const findings = DETECTORS.flatMap((d) => d(steps));
+// ctx: optional extras from normalise(), currently { instructions }.
+export function runDetectors(steps, ctx = {}) {
+  const findings = DETECTORS.flatMap((d) => d(steps, ctx));
   return findings.sort(
     (a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity] || a.steps[0] - b.steps[0] || a.id.localeCompare(b.id),
   );

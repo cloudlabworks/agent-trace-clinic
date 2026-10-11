@@ -1,0 +1,11 @@
+[
+  {"role": "system", "content": "You manage feature flags. Never call delete_flag. Only use get_flag, set_flag and list_flags. Always add the tag \"audit\" to every flag you set. Do not call set_flag more than twice. Never say \"guaranteed\"."},
+  {"role": "user", "content": "Turn on new_checkout in staging."},
+  {"role": "assistant", "content": null, "tool_calls": [{"id": "c1", "type": "function", "function": {"name": "get_flag", "arguments": "{\"flag\": \"new_checkout\", \"env\": \"staging\"}"}}], "usage": {"prompt_tokens": 520, "completion_tokens": 25}},
+  {"role": "tool", "tool_call_id": "c1", "content": "{\"flag\": \"new_checkout\", \"value\": false}"},
+  {"role": "assistant", "content": null, "tool_calls": [{"id": "c2", "type": "function", "function": {"name": "set_flag", "arguments": "{\"flag\": \"new_checkout\", \"env\": \"staging\", \"value\": true, \"tags\": [\"audit\"]}"}}], "usage": {"prompt_tokens": 580, "completion_tokens": 40}},
+  {"role": "tool", "tool_call_id": "c2", "content": "{\"ok\": true}"},
+  {"role": "assistant", "content": null, "tool_calls": [{"id": "c3", "type": "function", "function": {"name": "get_flag", "arguments": "{\"flag\": \"new_checkout\", \"env\": \"staging\"}"}}], "usage": {"prompt_tokens": 640, "completion_tokens": 25}},
+  {"role": "tool", "tool_call_id": "c3", "content": "{\"flag\": \"new_checkout\", \"value\": true}"},
+  {"role": "assistant", "content": "Done. new_checkout reads back as on in staging.", "usage": {"prompt_tokens": 700, "completion_tokens": 30}}
+]

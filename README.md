@@ -43,6 +43,10 @@ Anything else fails with an error that starts `Unrecognised trace format:` and s
   - OpenAI: `usage.prompt_tokens` and `usage.completion_tokens` on an assistant message (or `input_tokens` and `output_tokens`). Chat-completions responses carry usage, but a stored message list often drops it.
   - Anthropic: `usage.input_tokens + cache_read_input_tokens + cache_creation_input_tokens` in, and `output_tokens` out. Anthropic's `input_tokens` counts only the tokens after the last cache breakpoint, so the sum is the real context size.
   - OTel: `gen_ai.usage.input_tokens` and `gen_ai.usage.output_tokens` on inference spans. The spec says input tokens SHOULD include cached tokens.
+- System and developer instructions are not steps, because extra steps would shift every step index. `normalise()` returns them beside the steps as `instructions: [{step, text, per_call}]`, where `step` is the first step the text applies to:
+  - OpenAI and chat-text: each `system` or `developer` message (these also stay steps, as before);
+  - Anthropic: the top-level `system` of `{"system": ..., "messages": [...]}`, at step 0;
+  - OTel: `gen_ai.system_instructions` on each inference span, at that span's step, with `per_call: true`, because it is recorded per model call.
 - `error` is true on a failed tool result:
   - Anthropic: the `tool_result` block has `is_error: true`.
   - OTel: the span status code is ERROR (`2`, `"STATUS_CODE_ERROR"` or `"ERROR"`), or the span has an `error.type` attribute.
@@ -56,7 +60,7 @@ Written against the OpenTelemetry GenAI semantic conventions, which have moved o
 - The old page, https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/, now only says the conventions moved. The site's semantic conventions index shows version 1.44.0.
 - Inference: [docs/gen-ai/client-inference.md](https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/docs/gen-ai/client-inference.md) (chat spans, `gen_ai.output.messages`, usage)
 
-Attributes read: `gen_ai.operation.name`, `gen_ai.tool.name`, `gen_ai.tool.call.arguments`, `gen_ai.tool.call.result`, `gen_ai.usage.input_tokens`, `gen_ai.usage.output_tokens`, `gen_ai.output.messages` (parts of type `text` and `tool_call`), and `error.type`, plus the span status.
+Attributes read: `gen_ai.operation.name`, `gen_ai.tool.name`, `gen_ai.tool.call.arguments`, `gen_ai.tool.call.result`, `gen_ai.usage.input_tokens`, `gen_ai.usage.output_tokens`, `gen_ai.output.messages` (parts of type `text` and `tool_call`), `gen_ai.system_instructions` (parts of type `text`, as a JSON string or a structured value), and `error.type`, plus the span status.
 
 - OTLP attribute lists (`[{key, value: {stringValue | intValue | ...}}]`) and plain attribute objects are both accepted. `gen_ai.tool.call.arguments` and `gen_ai.output.messages` may be JSON strings or structured values.
 - Spans are ordered by start time (`startTimeUnixNano`, compared as big integers, or an ISO `start_time`) when every GenAI span has one. Otherwise input order is kept.
@@ -66,7 +70,7 @@ Attributes read: `gen_ai.operation.name`, `gen_ai.tool.name`, `gen_ai.tool.call.
 
 ## Detectors
 
-Each detector is a pure function over the step list. Each one returns findings shaped `{id, severity, steps: [i...], evidence, explain}`, and some add a `data` field. Evidence is a quote of at most 80 characters. Severity is one of `high`, `medium`, `low` or `info`. The exact rules:
+Each detector is a pure function over the step list (`forgotten_instruction` also reads the `instructions` that `normalise()` returns beside it; `runDetectors(steps, { instructions })`). Each one returns findings shaped `{id, severity, steps: [i...], evidence, explain}`, and some add a `data` field. Evidence is a quote of at most 80 characters. Severity is one of `high`, `medium`, `low` or `info`. The exact rules:
 
 | id | Severity | Rule |
 | --- | --- | --- |
@@ -75,6 +79,7 @@ Each detector is a pure function over the step list. Each one returns findings s
 | `context_growth` | medium; high if the multiple is at least 5 | Take every step with a recorded `tokens_in` (the context curve). Fire when all of these hold: there are at least 3 points; the curve never goes down; the first value is above 0; last / first is at least 2; and the average growth per model call, (last - first) / (points - 1), is at least 300 tokens. `steps` lists the points. `data` carries the curve, first, last, the multiple and `per_call`. A curve that dips once (for example after compaction) does not fire. See [Why 300 tokens per call](#why-300-tokens-per-call). |
 | `unhandled_tool_error` | medium | A failed `tool_result` is unhandled when the next `tool_call` after it has the same tool and identical canonical args, or when the failed result is the last step of the trace. One finding per tool+args group; `steps` lists the unhandled failed results. |
 | `unproven_completion` | high | An assistant `message` contains a completion claim, and no check ran after the last change made before that message, either before the claim or after it. One finding per message. See [Receipts: checks and changes](#receipts-checks-and-changes). |
+| `forgotten_instruction` | high | A sentence of the system or developer instructions states a constraint in one of the forms listed in [Instructions it understands](#instructions-it-understands), and a later tool call or assistant message visibly breaks it. One finding per broken sentence; `steps` lists the steps that break it. `data` says which form, the literal or tools, the step the sentence first applies from, and `dropped_at`. |
 | `token_totals` | info | Present when any step records tokens. `steps` lists those steps. `data` holds the per-step counts and the task totals (in, out, total, model calls). |
 
 A completion claim is a sentence (split on `.`, `!`, `?` and newlines) that contains one of these whole words, in any case: done, fixed, deployed, passed, passes, passing, complete, completed, resolved, succeeded, successfully, shipped, merged. Questions (sentences ending in `?`) are skipped. So is a match when any of the three words right before it is one of: not, no, never, cannot, unable, failed, fail, will, once, until, after, if, when, before, yet, still, need, needs, should, would, could, might, may, or any word ending in `n't` or `'ll`. That way "not done yet", "could not be completed" and "I'll get it done" don't count.
@@ -96,6 +101,29 @@ The rule for a claim at step c:
 2. The claim is proven when some check comes after L, anywhere in the task: before the claim ("verify, then say done") or after it ("say done, then verify").
 3. A check whose result is marked as an error proves nothing. A result belongs to the first tool_result after the call with the same tool and arguments. A change's own result ("ok: updated") is never a receipt.
 4. With no change before the claim, any successful check in the task proves it. With no tool calls at all, the claim is flagged.
+
+### Instructions it understands
+
+`forgotten_instruction` is deliberately narrow: it prefers a miss to a false alarm.
+
+- **Sources.** Only the `instructions` described under [Step shape](#step-shape): system and developer messages, the Anthropic top-level `system`, and OTel `gen_ai.system_instructions`. User messages are never read as instructions. `gen_ai.input.messages` is still not read.
+- **Sentences.** Instruction text is split at `.`, `!`, `?`, `;` (followed by a space or the end) and at newlines, but never inside `"..."`, `“...”` or `` `...` ``. A leading list marker (`1.`, `2)`, `-`, `*`) is dropped.
+- **Keyword first.** The constraint word must start the sentence. A sentence that contains any of these words is skipped, because it carries a condition or an order the detector does not model: unless, except, if, when, whenever, until, before, after, without, while, otherwise, instead, once, first, then, more than, less than, fewer than, at most, at least, twice, again.
+- **Literals.** A quoted literal is text in straight double quotes, curly double quotes or backticks, 1 to 60 characters. Single quotes are not read, because apostrophes break them. A literal matches case-insensitively, as a whole word at word edges.
+- **Which tools a sentence is about.** A tool the trace calls is named exactly in the sentence, or every word of its name (two or more words) appears in the sentence, allowing the endings -s, -es, -d, -ed and -ing. "every ticket you update" is about `update_ticket` but not `get_ticket`.
+
+The four forms (`NEG` is Never, Do not, Don't, Must not, Must never, You must not, You must never, Mustn't, You mustn't):
+
+| Form | Shape | Broken by |
+| --- | --- | --- |
+| `forbidden_tool` | `NEG call\|use\|run\|invoke\|execute [the] TOOL [tool].` and nothing else in the sentence; TOOL is a tool the trace calls | any later call to TOOL |
+| `tools_only` | `Only call\|use`, `You may only call\|use`, `Use only` or `Call only`, then `[the] [tools] A, B and C [tools].`; every item looks like a tool id (a tool the trace calls, or a word with `_`, `.`, `-` or a camelCase hump) | any later call to a tool not in the list |
+| `forbidden_text` | `NEG say\|write\|mention\|use\|include\|output\|print\|reveal\|send\|share\|type\|enter\|promise\|add\|put ...` with exactly one quoted literal | if the sentence is about a tool: a call to that tool whose argument strings contain the literal; otherwise: a later assistant message that contains it |
+| `required_text` | `Always ...` or `[You] must ...` (not followed by not or never) with exactly one quoted literal, about at least one tool | a later call to that tool whose argument strings do not contain the literal |
+
+Each understood sentence applies from the first step it appears at, and stays in force after that even if later per-call instructions leave it out. That is the case of a harness that trims an instruction after the first call. For OTel per-call instructions, the finding also reports the violating steps at which the sentence was missing from the instructions in force (`dropped_at`). The explanation then says the instruction had been dropped from what the agent was given. Otherwise it says the agent ignored it.
+
+Not understood, by design: "should never", "please don't" and other keywords; constraints with no quoted literal or tool id ("Never reopen a closed ticket yourself"); any condition ("Do not call search_docs more than twice"); two or more literals in one sentence; requirements that are not tied to a tool (`Always say "thanks"`); and anything after the tool name in a `forbidden_tool` sentence ("Never call drop_table on production").
 
 ### Why 300 tokens per call
 
@@ -125,7 +153,7 @@ Both are quiet under the new rule. Real token counts differ from the stub's esti
 
 ## Cases
 
-`cases/` holds 21 synthetic traces. Every one is made up for this suite and none comes from a real agent. `cases/expected.json` lists the exact findings each must produce (id, severity, steps, and an evidence substring), or the error it must raise. The expected findings were written from each case's design, before the detectors were run on it. The test fails on a missing finding or an extra one.
+`cases/` holds 25 synthetic traces. Every one is made up for this suite and none comes from a real agent. `cases/expected.json` lists the exact findings each must produce (id, severity, steps, and an evidence substring), or the error it must raise. The expected findings were written from each case's design, before the detectors were run on it. The test fails on a missing finding or an extra one.
 
 | Case | Format | Designed failure | Expected findings |
 | --- | --- | --- | --- |
@@ -145,6 +173,10 @@ Both are quiet under the new rule. Real token counts differ from the stub's esti
 | `openai-verify-then-claim.json` | openai (`{messages}`) | control: rotates a key, checks its status, then says "Done." | token_totals |
 | `anthropic-claim-then-verify.json` | anthropic | control: rebuilds an index, says "Rebuild completed.", then checks the index status | token_totals |
 | `otel-change-claim-no-verify.json` | otel-genai, flat spans | reads a setting, changes it, says "Done" with no check after the change | unproven_completion, token_totals |
+| `openai-forbidden-tool.json` | openai | the system message says "Never call drop_table."; the agent calls it | forgotten_instruction, token_totals |
+| `anthropic-required-label.json` | anthropic (`{system, messages}`) | `Always add the label "triaged" to every ticket you update.`: the first update has it, the second does not; a second rule (`Never mention "Project Kestrel" to customers.`) is kept | forgotten_instruction (second update only), token_totals |
+| `otel-forbidden-phrase.jsonl` | otel-genai, JSONL | `Never mention "Project Kestrel".` in the per-call instructions; the answer mentions it | forgotten_instruction, token_totals |
+| `openai-instructions-kept.json` | openai | control: four understood rules, all kept, plus a rule with a condition the detector skips | token_totals |
 | `openai-small-first-call.json` | openai | control: a 180-token first call growing about 145 tokens a turn (4.2x), which the old 2x rule flagged | token_totals |
 | `chat-text-plain.json` | chat-text | control: no tools, no claims | none |
 | `unknown-format.json` | none | an unrelated JSON document | error |
@@ -153,7 +185,7 @@ Both are quiet under the new rule. Real token counts differ from the stub's esti
 
 `node test.mjs` runs every case plus unit checks on canonical JSON, each format's edge cases, each detector's thresholds, and usage with and without a price. It also checks the model-pass prompt and parser against `fixtures/labeller-parser.json`, without loading a model. It prints pass and fail counts and exits non-zero on any failure.
 
-`cases/mast-expected.json` gives the MAST failure modes each case should get (see Model pass below), with a reason for each one. Like `expected.json`, it was written from each case's design. It was committed before any model was run on the cases.
+`cases/mast-expected.json` gives the MAST failure modes each case should get (see Model pass below), with a reason for each one. Like `expected.json`, it was written from each case's design. It was committed before any model was run on the cases. It covers the 17 cases of the bake-off. The 8 cases added with the receipt fix and the `forgotten_instruction` detector are not in it, so the bake-off's case list and its counts stay the same.
 
 ## Model pass
 
@@ -279,6 +311,7 @@ What these checks cannot see:
 
 - Intent. A loop of three identical calls may be legitimate polling, and a "done" may be true. The findings point at steps to read; they are not verdicts.
 - Whether a check actually checks the claim. `unproven_completion` sorts tools by name, so any check after the last change clears a claim, even a read of something unrelated, and even a check whose result contradicts the claim. That last case is a misread check (MAST FM-3.3), as in `anthropic-unproven.jsonl`. A claimed action that no tool call performed ("I merged the PR" with no merge call) is not seen either. Tool names that hide a write behind a check word (`check_and_fix`) read as checks. Claim words outside the list ("it works now", "all good") are missed, and claim words used in other senses ("what I've done so far") can match.
+- Instructions in other words. `forgotten_instruction` reads only the four forms above, so most real instructions are not checked at all. A paraphrased or conditional rule is missed by design. A literal that appears in an assistant message only to say it was avoided (`I did not mention "X"`) still counts as a mention.
 - Context growth on a different scale. The 300-tokens-per-call threshold is set from the patient's stub estimates. An agent whose tool outputs are naturally large, such as file reads or logs, can pass it with no fault, and a growth that arrives in one jump in a very long run can fall under it.
 - Tool failures a tool doesn't mark. An OpenAI tool that returns "could not connect" without a leading `Error` reads as a success. So does an OTel span with no error status.
 - An agent that stops after a failure. `unhandled_tool_error` only looks at the next tool call. If the agent writes a message after the error and then makes no more calls, that does not count as unhandled. A false "done" in that message is caught by `unproven_completion` instead.

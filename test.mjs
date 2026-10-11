@@ -14,8 +14,11 @@ import {
   detectContextGrowth,
   detectUnhandledErrors,
   detectUnprovenCompletion,
+  detectForgottenInstructions,
   findClaim,
   isCheckCall,
+  instructionSentences,
+  parseConstraint,
   RULES,
 } from './detectors.js';
 import { usage } from './usage.js';
@@ -74,7 +77,7 @@ for (const file of files) {
   check(`case ${file} format`, result.format === exp.format, `got ${result.format}`);
   check(`case ${file} container`, result.container === exp.container, `got ${result.container}`);
   check(`case ${file} step count`, result.steps.length === exp.step_count, `got ${result.steps.length}`);
-  const got = runDetectors(result.steps);
+  const got = runDetectors(result.steps, { instructions: result.instructions });
   const gotKeys = got.map(key).sort();
   const expKeys = exp.findings.map(key).sort();
   check(`case ${file} findings`, JSON.stringify(gotKeys) === JSON.stringify(expKeys), `expected ${JSON.stringify(expKeys)} got ${JSON.stringify(gotKeys)}`);
@@ -225,6 +228,51 @@ check('unproven: user text is never a claim', detectUnprovenCompletion([S(0, 'me
   check('shell: git status, pytest -q, curl GET, cat | grep are checks', ['git status', 'pytest -q', 'curl -s https://x.test/healthz', 'cat a.txt | grep x', 'npm run test'].every((cmd) => c('bash', JSON.stringify({ command: cmd }))));
   check('shell: writes, POST, rm and mixed chains are changes', ['echo x > a.txt', 'curl -X POST https://x.test', 'rm -rf build', 'git status && git push', 'sed -i s/a/b/ f'].every((cmd) => !c('run_command', JSON.stringify({ command: cmd }))));
   check('shell: a shell tool without a command string is a change', !c('bash', '{}'));
+}
+
+// ------------------------------------------------------------------ unit: forgotten_instruction
+
+{
+  const tools = new Set(['update_ticket', 'get_ticket', 'drop_table', 'search_docs']);
+  const kind = (sentence) => parseConstraint(sentence, tools)?.kind ?? null;
+  check('instruction: "Never call TOOL." is forbidden_tool', kind('Never call drop_table.') === 'forbidden_tool');
+  check('instruction: "Do not use `TOOL`." is forbidden_tool', kind('Do not use `drop_table`.') === 'forbidden_tool');
+  check('instruction: a tool the trace never calls is not checked', kind('Never call delete_flag.') === null);
+  check('instruction: "Never call TOOL on X" (a scope) is not understood', kind('Never call drop_table on production.') === null);
+  check('instruction: "Only use A, B and C" is tools_only', parseConstraint('Only use get_ticket, search_docs and update_ticket.', tools)?.tools.join() === 'get_ticket,search_docs,update_ticket');
+  check('instruction: "Only use the search tool" (no tool ids) is not understood', kind('Only use the search tool.') === null);
+  check('instruction: "Never mention \"X\"" is forbidden_text', kind('Never mention "Project Kestrel".') === 'forbidden_text');
+  check('instruction: "Always add \"X\" to every ticket you update" ties to update_ticket only', parseConstraint('Always add the label "triaged" to every ticket you update.', tools)?.tools.join() === 'update_ticket');
+  check('instruction: a requirement with no tool to tie it to is not checked', kind('Always say "thank you".') === null);
+  check('instruction: unquoted constraints are not understood', kind('Never reopen a closed ticket yourself.') === null && kind('Do not promise dates, refunds or credits.') === null);
+  check('instruction: conditions are not understood', kind('Do not call search_docs more than twice.') === null && kind('Always add "urgent" if the customer is angry.') === null && kind('Never call drop_table unless asked.') === null);
+  check('instruction: two quoted literals are not understood', kind('Always add the labels "billing" and "triaged" to every ticket you update.') === null);
+  check('instruction: a keyword mid-sentence does not count', kind('A poor update says only "see the docs".') === null);
+  check('instruction: "should never" is not a recognised keyword', kind('You should never mention "Project Kestrel".') === null);
+  check('sentences: no split inside quotes', instructionSentences('Never say "Done. Ok". Always be brief.').join('|') === 'Never say "Done. Ok".|Always be brief.');
+  check('sentences: list markers and newlines', instructionSentences('Rules:\n1. Never call drop_table.\n- Only use get_ticket.').join('|') === 'Rules:|Never call drop_table.|Only use get_ticket.');
+
+  const sys = 'Always add the label "triaged" to every ticket you update.';
+  const upd = (i, labels) => S(i, 'tool_call', { tool: 'update_ticket', args: JSON.stringify({ comment: 'Hi', labels }) });
+  const fi = (steps, instructions) => detectForgottenInstructions(steps, instructions ? { instructions } : {});
+  check('forgotten: system message steps are read when no instructions are passed', fi([S(0, 'message', { role: 'system', text: sys }), upd(1, ['ui'])]).map(key).join() === 'forgotten_instruction|high|1');
+  check('forgotten: the label inside another value does not count as a miss', fi([S(0, 'message', { role: 'system', text: sys }), upd(1, ['ui', 'triaged'])]).length === 0);
+  check('forgotten: the literal is matched as a whole word', fi([S(0, 'message', { role: 'system', text: sys }), S(1, 'tool_call', { tool: 'update_ticket', args: JSON.stringify({ labels: ['untriaged'] }) })]).length === 1);
+  check('forgotten: steps before the instruction are not judged', fi([upd(0, ['ui']), S(1, 'message', { role: 'system', text: sys })]).length === 0);
+  const perCall = [{ step: 0, text: sys, per_call: true }, { step: 1, text: 'Be brief.', per_call: true }];
+  const dropped = fi([S(0, 'message'), S(1, 'message'), upd(2, ['ui'])], perCall)[0];
+  check('forgotten: an instruction dropped from later calls is still enforced, and the drop is reported', dropped?.steps.join() === '2' && dropped.data.dropped_at.join() === '2' && /no longer in the per-call system instructions/.test(dropped.explain));
+  const kept = fi([S(0, 'message'), upd(1, ['ui'])], [{ step: 0, text: sys, per_call: true }])[0];
+  check('forgotten: an instruction still present is reported as ignored', kept?.data.dropped_at.length === 0 && /ignored it/.test(kept.explain));
+  check('forgotten: user messages are not instructions', fi([S(0, 'message', { role: 'user', text: sys }), upd(1, ['ui'])]).length === 0);
+}
+{
+  const r = normalise({ system: [{ type: 'text', text: 'Never call x_y.' }], messages: [{ role: 'user', content: 'go' }, { role: 'assistant', content: [{ type: 'tool_use', id: 'a', name: 'x_y', input: {} }] }] });
+  check('normalise: Anthropic top-level system becomes an instruction at step 0, not a step', r.steps.length === 2 && r.instructions.length === 1 && r.instructions[0].step === 0 && r.instructions[0].text === 'Never call x_y.');
+  const o = normalise([{ role: 'developer', content: 'Only use a_b.' }, { role: 'user', content: 'hi' }]);
+  check('normalise: OpenAI developer message is an instruction and stays a step', o.steps.length === 2 && o.instructions[0].step === 0 && o.instructions[0].per_call === false);
+  const t = normalise([{ name: 'chat', attributes: { 'gen_ai.operation.name': 'chat', 'gen_ai.system_instructions': '[{"type":"text","content":"Be brief."}]' } }]);
+  check('normalise: OTel gen_ai.system_instructions is a per-call instruction', t.instructions.length === 1 && t.instructions[0].per_call === true && t.instructions[0].text === 'Be brief.' && t.steps.length === 1 && !('instructions' in t.steps[0]));
 }
 
 // ------------------------------------------------------------------ unit: usage
