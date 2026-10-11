@@ -118,6 +118,8 @@ export function normalise(input) {
   }
   if (isPlainObject(data) && Array.isArray(data.spans)) data = data.spans;
   if (isPlainObject(data) && Array.isArray(data.messages)) data = data.messages;
+  // A single message or span on its own (e.g. a one-line JSONL file).
+  if (isPlainObject(data) && (typeof data.role === 'string' || isSpanLike(data))) data = [data];
 
   if (!Array.isArray(data)) {
     fail('expected an array of messages or spans, an object with "messages" or "spans", or an OTLP "resourceSpans" document');

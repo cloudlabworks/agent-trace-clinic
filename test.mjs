@@ -144,6 +144,7 @@ check('openai error rule: leading Error', openaiToolError({}, '  error: boom') =
   check('otel: intValue strings become numbers', typeof r.steps[0].tokens_in === 'number');
   check('otel: execute_tool without arguments has args null', r.steps[1].args === null);
 }
+check('a single message on its own is a one-step trace', normalise('{"role": "user", "content": "hi"}').steps.length === 1);
 throwsFormat('rejects empty input', '   ', 'empty');
 throwsFormat('rejects an empty list', '[]', 'empty list');
 throwsFormat('rejects a bare string', '"hello"', 'Unrecognised trace format');

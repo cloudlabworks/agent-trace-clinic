@@ -19,7 +19,7 @@ Needs a current Node.js (tested with Node 26). The CLI exits 0 after a report, a
 
 ## Input formats
 
-A trace is one task: one run of an agent from request to final answer. The input can be a single JSON document, or JSONL with one message or span per line. JSON is tried first; if it fails to parse, each non-empty line is parsed separately, and the first bad line is reported by number.
+A trace is one task: one run of an agent from request to final answer. The input can be a single JSON document, or JSONL with one message or span per line. JSON is tried first (so a one-line file holding a single message or span is a one-step trace); if it fails to parse, each non-empty line is parsed separately, and the first bad line is reported by number.
 
 | Format | Recognised by | What becomes a step |
 | --- | --- | --- |
@@ -52,8 +52,9 @@ Anything else fails with an error that starts `Unrecognised trace format:` and s
 
 Written against the OpenTelemetry GenAI semantic conventions, which have moved out of the main semantic-conventions repository into [open-telemetry/semantic-conventions-genai](https://github.com/open-telemetry/semantic-conventions-genai). That repository has no tagged release yet. This code follows its `main` branch at commit `6fd0d76` (2026-10-09), which builds on core semantic conventions v1.44.0. All GenAI attributes used here have status Development, so they may still change.
 
-- Spans: [docs/gen-ai/gen-ai-spans.md](https://github.com/open-telemetry/semantic-conventions-genai/blob/main/docs/gen-ai/gen-ai-spans.md) (execute tool span)
-- Inference: [docs/gen-ai/client-inference.md](https://github.com/open-telemetry/semantic-conventions-genai/blob/main/docs/gen-ai/client-inference.md) (chat spans, `gen_ai.output.messages`, usage)
+- Spans: [docs/gen-ai/gen-ai-spans.md](https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/docs/gen-ai/gen-ai-spans.md) (execute tool span)
+- The old page, https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/, now only says the conventions moved. The site's semantic conventions index shows version 1.44.0.
+- Inference: [docs/gen-ai/client-inference.md](https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/docs/gen-ai/client-inference.md) (chat spans, `gen_ai.output.messages`, usage)
 
 Attributes read: `gen_ai.operation.name`, `gen_ai.tool.name`, `gen_ai.tool.call.arguments`, `gen_ai.tool.call.result`, `gen_ai.usage.input_tokens`, `gen_ai.usage.output_tokens`, `gen_ai.output.messages` (parts of type `text` and `tool_call`), and `error.type`, plus the span status.
 
