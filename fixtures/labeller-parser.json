@@ -21,7 +21,7 @@
     {"name": "unknown mode id dropped, valid kept", "raw": "[{\"mode\": \"FM-4.1\", \"step\": 3, \"quote\": \"Done\"}, {\"mode\": \"FM-3.2\", \"step\": 3, \"quote\": \"Done\"}]", "status": "ok", "labels": [["FM-3.2", 3]], "dropped": 1},
     {"name": "non-id mode (a word)", "raw": "[{\"mode\": \"tool_call\", \"step\": 1, \"quote\": \"restart_service\"}]", "status": "no_model_opinion", "labels": [], "dropped": 1},
     {"name": "step out of range", "raw": "[{\"mode\": \"FM-3.2\", \"step\": 9, \"quote\": \"Done\"}]", "status": "no_model_opinion", "labels": [], "dropped": 1},
-    {"name": "quote copied from the definitions", "raw": "[{\"mode\": \"FM-3.2\", \"step\": 3, \"quote\": \"[FM-3.2 definition text not reproduced]\"}]", "status": "no_model_opinion", "labels": [], "dropped": 1},
+    {"name": "quote copied from the definitions", "raw": "[{\"mode\": \"FM-3.2\", \"step\": 3, \"quote\": \"not checked, or only partly checked, so mistakes and contradictions\"}]", "status": "no_model_opinion", "labels": [], "dropped": 1},
     {"name": "missing quote", "raw": "[{\"mode\": \"FM-3.2\", \"step\": 3}]", "status": "no_model_opinion", "labels": [], "dropped": 1},
     {"name": "duplicates collapse", "raw": "[{\"mode\": \"FM-3.2\", \"step\": 3, \"quote\": \"Done\"}, {\"mode\": \"FM-3.2\", \"step\": 3, \"quote\": \"has been restarted\"}]", "status": "ok", "labels": [["FM-3.2", 3]], "dropped": 1},
     {"name": "loose mode spellings", "raw": "[{\"mode\": \"3.2\", \"step\": 3, \"quote\": \"Done\"}, {\"id\": \"FM 2.6: Reasoning-action mismatch\", \"step\": \"#3\", \"quote\": \"Done\"}]", "status": "ok", "labels": [["FM-3.2", 3], ["FM-2.6", 3]], "dropped": 0},
