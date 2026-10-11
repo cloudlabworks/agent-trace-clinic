@@ -1,0 +1,389 @@
+{
+ "model": "HuggingFaceTB/SmolLM3-3B-ONNX",
+ "revision": "af50613703fb6f10ffcb21b27ad48edcb8334232",
+ "dtype": "q4",
+ "variant": "v2-plain",
+ "answer_prefix": "",
+ "device": "cpu (onnxruntime-node)",
+ "transformers_js": "4.3.1",
+ "host": "Apple M4 Pro, Node v26.8.1",
+ "taxonomy": "https://arxiv.org/abs/2503.13657v3",
+ "download_bytes": 2854433696,
+ "files": [
+  "config.json",
+  "generation_config.json",
+  "onnx/model_q4.onnx",
+  "onnx/model_q4.onnx_data",
+  "tokenizer.json",
+  "tokenizer_config.json"
+ ],
+ "load_ms_from_cache": 6109,
+ "latency_ms": {
+  "median": 9413,
+  "max": 11027
+ },
+ "first_token_ms": {
+  "median": 3914,
+  "max": 4503
+ },
+ "score": {
+  "cases": 14,
+  "exact": 0,
+  "failure_cases": 9,
+  "overlap": 0,
+  "controls": 5,
+  "control_fp": 0,
+  "off_label": 0,
+  "no_opinion": 14,
+  "per_case": [
+   {
+    "case": "anthropic-clean.json",
+    "expected": "none",
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": null
+   },
+   {
+    "case": "anthropic-context-growth.json",
+    "expected": "none",
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": null
+   },
+   {
+    "case": "anthropic-false-done-after-error.json",
+    "expected": [
+     "FM-3.2"
+    ],
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": false
+   },
+   {
+    "case": "anthropic-retry-storm.json",
+    "expected": [
+     "FM-1.3"
+    ],
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": false
+   },
+   {
+    "case": "anthropic-unproven.jsonl",
+    "expected": [
+     "FM-3.3"
+    ],
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": false
+   },
+   {
+    "case": "chat-text-plain.json",
+    "expected": "none",
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": null
+   },
+   {
+    "case": "openai-clean.json",
+    "expected": "none",
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": null
+   },
+   {
+    "case": "openai-tool-loop.json",
+    "expected": [
+     "FM-1.3"
+    ],
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": false
+   },
+   {
+    "case": "openai-unhandled-error.jsonl",
+    "expected": [
+     "FM-1.3"
+    ],
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": false
+   },
+   {
+    "case": "openai-unproven-completion.json",
+    "expected": [
+     "FM-3.2"
+    ],
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": false
+   },
+   {
+    "case": "otel-clean.json",
+    "expected": "none",
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": null
+   },
+   {
+    "case": "otel-growth-unproven.jsonl",
+    "expected": [
+     "FM-3.2"
+    ],
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": false
+   },
+   {
+    "case": "otel-retry-storm.json",
+    "expected": [
+     "FM-1.3"
+    ],
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": false
+   },
+   {
+    "case": "otel-tool-loop.json",
+    "expected": [
+     "FM-1.3"
+    ],
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": false
+   }
+  ]
+ },
+ "runs": [
+  {
+   "case": "anthropic-clean.json",
+   "status": "no_model_opinion",
+   "reason": "every label was invalid",
+   "labels": [],
+   "dropped": [
+    "unknown mode id"
+   ],
+   "raw": "```json\n[{\"mode\":\"tool_call\",\"step\":1,\"quote\":\"tool_call\",\"tool_call\":\"config_version\",\"tool_call\":\"deploy\",\"tool_call\":\"staging\",\"tool_call\":\"health\",\"tool_call\":\"health\"},\"```\n```json\n{\"mode\": \"id\", \"step\": \"7\", \"quote\": \"deploy\", \"id\": \"tool_call\", \"step\": \"tool_call\", \"tool_call\": \"tool_call\", \"id\": \"tool_call\", \"step\": \"tool_call\", \"tool_call\": \"tool_call\", \"tool_call\": \"tool_call\", \"tool_call\": \"tool_call\", \"tool_call\": \"tool_call\", \"tool_call\": \"tool_call\", \"tool_call\": \"tool_call\", \"tool_call\": \"tool_call",
+   "timing": {
+    "first_token_ms": 4215.209042,
+    "total_ms": 10032.292,
+    "prompt_tokens": 837,
+    "new_tokens": 160
+   }
+  },
+  {
+   "case": "anthropic-context-growth.json",
+   "status": "no_model_opinion",
+   "reason": "every label was invalid",
+   "labels": [],
+   "dropped": [
+    "unknown mode id"
+   ],
+   "raw": "```json\n[\n    {\n        \"mode\": \"trace\",\n        \"step\": 2,\n        \"quote\": \"file_call: read_log -> 02:00:01 start 02:00:02 scan events (full) 02:00:01 start 02:00:02 scan events (full) 02:00:01 start 02:00:02 scan events (full)\"\n    },\n    {\n        \"mode\": \"trace\",\n        \"step\": 3,\n        \"quote\": \"tool_call: read_log -> 02:00:01 start 02:00:02 scan events (full) 02:00:01 start 02:00:02 scan events (full) 02:00:01 start 02:",
+   "timing": {
+    "first_token_ms": 4503.478042000001,
+    "total_ms": 11027.184416999999,
+    "prompt_tokens": 960,
+    "new_tokens": 160
+   }
+  },
+  {
+   "case": "anthropic-false-done-after-error.json",
+   "status": "no_model_opinion",
+   "reason": "every label was invalid",
+   "labels": [],
+   "dropped": [
+    "unknown mode id",
+    "unknown mode id",
+    "unknown mode id",
+    "unknown mode id"
+   ],
+   "raw": "```json\n[\n    {\n        \"mode\": \"tool_call\",\n        \"step\": 1,\n        \"quote\": \"restart\"\n    },\n    {\n        \"mode\": \"tool_call\",\n        \"step\": 2,\n        \"quote\": \"restart_service\"\n    },\n    {\n        \"mode\": \"tool_call\",\n        \"step\": 3,\n        \"quote\": \"payments-worker\"\n    },\n    {\n        \"mode\": \"tool_call\",\n        \"step\": 4,\n        \"quote\": \"not found\"\n    }\n]\n```",
+   "timing": {
+    "first_token_ms": 3417.8330829999977,
+    "total_ms": 7417.3091659999955,
+    "prompt_tokens": 750,
+    "new_tokens": 114
+   }
+  },
+  {
+   "case": "anthropic-retry-storm.json",
+   "status": "no_model_opinion",
+   "reason": "every label was invalid",
+   "labels": [],
+   "dropped": [
+    "unknown mode id",
+    "unknown mode id",
+    "unknown mode id",
+    "unknown mode id"
+   ],
+   "raw": "```json\n[\n    {\n        \"mode\": \"user\",\n        \"step\": 1,\n        \"quote\": \"table orders is locked\"\n    },\n    {\n        \"mode\": \"user\",\n        \"step\": 2,\n        \"quote\": \"run_migration -> lock timeout: table orders is locked\"\n    },\n    {\n        \"mode\": \"user\",\n        \"step\": 3,\n        \"quote\": \"run_migration -> lock timeout: run_migration -> lock timeout: table orders is locked\"\n    },\n    {\n        \"mode\": \"user\",\n        \"step\": 4,\n        \"quote\": \"run_migration -> lock timeout: table orders is locked\"\n    }\n]\n```",
+   "timing": {
+    "first_token_ms": 3950.503582999998,
+    "total_ms": 9118.981583,
+    "prompt_tokens": 850,
+    "new_tokens": 143
+   }
+  },
+  {
+   "case": "anthropic-unproven.jsonl",
+   "status": "no_model_opinion",
+   "reason": "every label was invalid",
+   "labels": [],
+   "dropped": [
+    "unknown mode id"
+   ],
+   "raw": "```json\n[{\"mode\": \"action\", \"step\": \"3\", \"quote\": \"CI is green\", \"quote\": \"Merged and done\", \"quote\": \"Unwarranted optimism\", \"quote\": \"Lack of verification\", \"rule\": \"\"}\n```",
+   "timing": {
+    "first_token_ms": 3557.9027080000014,
+    "total_ms": 5640.815708000002,
+    "prompt_tokens": 770,
+    "new_tokens": 59
+   }
+  },
+  {
+   "case": "chat-text-plain.json",
+   "status": "no_model_opinion",
+   "reason": "every label was invalid",
+   "labels": [],
+   "dropped": [
+    "unknown mode id",
+    "unknown mode id",
+    "unknown mode id"
+   ],
+   "raw": "```json\n[\n    {\n        \"mode\": \"system\",\n        \"step\": \"0\",\n        \"quote\": \"You summarise incident notes.\"\n    },\n    {\n        \"mode\": \"system\",\n        \"step\": \"1\",\n        \"quote\": \"Summarise last week's incidents in one line.\"\n    },\n    {\n        \"mode\": \"system\",\n        \"step\": \"2\",\n        \"quote\": \"Three outages last week, each under an hour, traced from expired certificate.\"\n    }\n]\n```",
+   "timing": {
+    "first_token_ms": 3398.108709,
+    "total_ms": 7193.241583999996,
+    "prompt_tokens": 747,
+    "new_tokens": 109
+   }
+  },
+  {
+   "case": "openai-clean.json",
+   "status": "no_model_opinion",
+   "reason": "no JSON array in the model output",
+   "labels": [],
+   "dropped": [],
+   "raw": "```json\n[{\"mode\": \"system\", \"step\": 1, \"quote\": \"mode\", \"step\": \"message\", \"quote\": \"user\", \"step\": \"mode\", \"quote\": \"tool\", \"quote\": \"tool\", \"quote\": \"user\", \"quote\": \"step\", \"quote\": \"previous\", \"quote\": \"previous\", \"quote\": \"previous\", \"quote\": \"previous\", \"step\": \"previous\", \"step\": \"previous\", \"step\": \"previous\", \"step\": \"previous\", \"step\": \"previous\", \"step\": \"previous\", \"step\": \"previous\", \"step\": \"previous\", \"step\": \"previous\", \"step\": \"previous\", \"step\": \"previous\", \"step\": \"previous\",",
+   "timing": {
+    "first_token_ms": 3855.080750000001,
+    "total_ms": 9659.107208000009,
+    "prompt_tokens": 840,
+    "new_tokens": 160
+   }
+  },
+  {
+   "case": "openai-tool-loop.json",
+   "status": "no_model_opinion",
+   "reason": "every label was invalid",
+   "labels": [],
+   "dropped": [
+    "unknown mode id"
+   ],
+   "raw": "```json\n[\n    {\n        \"mode\": \"I\",\n        \"step\": 0,\n        \"quote\": \"You are a support assistant. Use search_docs to answer the user's question.\",\n        \"trace\": \"system message: 'What is the rate limit for the free tier?'\"\n    },\n    {\n        \"mode\": \"I\",\n        \"step\": 1,\n        \"tool\": \"tool_call\",\n        \"search\": \"search_docs\",\n        \"query\": \"query\",\n        \"quote\": \"What is the API rate limit for the free tier?\",\n        \"tool\": \"search_docs\",\n        \"tier\": \"free\",\n        \"rate\": \"rate\",\n        \"search\": \"search\",\n        \"no\": \"no\",\n        \"results\": \"results",
+   "timing": {
+    "first_token_ms": 3877.8950420000037,
+    "total_ms": 9647.794209,
+    "prompt_tokens": 848,
+    "new_tokens": 160
+   }
+  },
+  {
+   "case": "openai-unhandled-error.jsonl",
+   "status": "no_model_opinion",
+   "reason": "every label was invalid",
+   "labels": [],
+   "dropped": [
+    "unknown mode id"
+   ],
+   "raw": "```json\n{\n  \"mode\": \"user\",\n  \"step\": 9,\n  \"quote\": \"The backup store still rejects writes; that needs a permission to change before the migration.\",\n  \"words\": \"The backup store still rejects writes; that needs a permission to change before the migration.\"\n}\n```\n```json\n{\n  \"mode\": \"user\",\n  \"step\": 9,\n  \"quote\": \"The backup store still rejects writes; that needs a permission to change before the migration; the backup store still rejects writes; that needs a permission to change before the migration; the backup store still rejects writes; that needs a permission to change before the migration; the backup store still rejects writes; that needs a permission to change before the migration; the backup store still",
+   "timing": {
+    "first_token_ms": 4117.939375000002,
+    "total_ms": 10075.830791,
+    "prompt_tokens": 885,
+    "new_tokens": 160
+   }
+  },
+  {
+   "case": "openai-unproven-completion.json",
+   "status": "no_model_opinion",
+   "reason": "every label was invalid",
+   "labels": [],
+   "dropped": [
+    "unknown mode id"
+   ],
+   "raw": "```json\n[\n    {\n        \"mode\": \"premise\",\n        \"quote\": \"Let me look at that\",\n        \"step\": \"7\",\n        \"quote\": \"The tool has been used to fix the problem, but the fix is not verified.\"\n    },\n    {\n        \"mode\": \"premise\",\n        \"quote\": \"The tool has been used to fix the problem, but the fix is not verified.\",\n        \"step\": \"6\",\n        \"quote\": \"The tool has been used to fix the problem, but the tool has not been verified.\",\n        \"step\": \"6\",\n        \"step\": \"6\",\n        \"step\": \"6\",\n        \"step\": \"6\",\n        \"step\": \"6\",\n        \"step\": \"6\",\n",
+   "timing": {
+    "first_token_ms": 4085.568957999989,
+    "total_ms": 9965.798040999987,
+    "prompt_tokens": 872,
+    "new_tokens": 160
+   }
+  },
+  {
+   "case": "otel-clean.json",
+   "status": "no_model_opinion",
+   "reason": "every label was invalid",
+   "labels": [],
+   "dropped": [
+    "unknown mode id",
+    "unknown mode id",
+    "unknown mode id",
+    "unknown mode id"
+   ],
+   "raw": "```json\n[\n    {\n        \"mode\": \"3\",\n        \"step\": \"0\",\n        \"quote\": \"partial information or lack of information\"\n    },\n    {\n        \"mode\": \"3\",\n        \"step\": \"0\",\n        \"quote\": \"incomplete or inaccurate data\"\n    },\n    {\n        \"mode\": \"3\",\n        \"step\": \"0\",\n        \"quote\": \"lack of context\"\n    },\n    {\n        \"mode\": \"3\",\n        \"step\": \"0\",\n        \"quote\": \"inadequate validation\"\n    }\n]\n```",
+   "timing": {
+    "first_token_ms": 3470.401874999996,
+    "total_ms": 7676.209292,
+    "prompt_tokens": 750,
+    "new_tokens": 121
+   }
+  },
+  {
+   "case": "otel-growth-unproven.jsonl",
+   "status": "no_model_opinion",
+   "reason": "no JSON array in the model output",
+   "labels": [],
+   "dropped": [],
+   "raw": "```mode\n{\n  \"0\": {\n    \"step\": 1,\n    \"quote\": \"All tests passed and the cart bug is fixed.\"\n  },\n  \"1\": {\n    \"step\": 2,\n    \"quote\": \"The total number of passed tests is less than the total number of tests.\"\n  },\n  \"2\": {\n    \"step\": 3,\n    \"quote\": \"The tool call result does not match the expected outcome.\"\n  },\n  \"3\": {\n    \"step\": 4,\n    \"quote\": \"The patch does not address the identified issue.\"\n  },\n  \"4\": {\n    \"step\": 5,\n    \"quote\": \"The message does not accurately reflect the state of the system.\"\n  }\n}\n```\n```",
+   "timing": {
+    "first_token_ms": 3622.5911250000063,
+    "total_ms": 9178.582166000007,
+    "prompt_tokens": 796,
+    "new_tokens": 160
+   }
+  },
+  {
+   "case": "otel-retry-storm.json",
+   "status": "no_model_opinion",
+   "reason": "every label was invalid",
+   "labels": [],
+   "dropped": [
+    "unknown mode id"
+   ],
+   "raw": "```\n\n\n[{\"mode id\": \"step13\", \"quote\": \"The database timed out twice, so we used a cached value.\"}]\n```",
+   "timing": {
+    "first_token_ms": 4293.492874999996,
+    "total_ms": 5366.1340409999975,
+    "prompt_tokens": 889,
+    "new_tokens": 31
+   }
+  },
+  {
+   "case": "otel-tool-loop.json",
+   "status": "no_model_opinion",
+   "reason": "no JSON array in the model output",
+   "labels": [],
+   "dropped": [],
+   "raw": "```json\n[{\"mode\": \"tool_call\", \"quote\": \"13\", \"step\": \"12\", \"quote\": \"https://vendor.test/v1/trace\", \"quote\": \"words\", \"quote\": \"trace\", \"quote\": \"trace\", \"quote\": \"trace\", \"quote\": \"trace\", \"quote\": \"trace\", \"quote\": \"trace\", \"quote\": \"trace\", \"quote\": \"trace\", \"quote\": \"trace\", \"quote\": \"trace\", \"quote\": \"trace\", \"quote\": \"trace\", \"quote\": \"trace\", \"quote\": \"trace\", \"quote\": \"trace\", \"quote\": \"trace\", \"quote\": \"trace\", \"quote\": \"trace\", \"quote\": \"trace\", \"quote\": \"",
+   "timing": {
+    "first_token_ms": 4090.9997090000106,
+    "total_ms": 9961.39304200001,
+    "prompt_tokens": 893,
+    "new_tokens": 160
+   }
+  }
+ ],
+ "note": "prompt v2 (placeholder example, no id list); run before prompt hashing was added, so no prompt_sha256"
+}

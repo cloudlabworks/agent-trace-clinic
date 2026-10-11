@@ -1,0 +1,386 @@
+{
+ "model": "onnx-community/Qwen3-0.6B-ONNX",
+ "revision": "1e0a4a196ecabdf9a879664110574563d3f372d3",
+ "dtype": "q4",
+ "variant": "v3-thinking",
+ "thinking": true,
+ "answer_prefix": "",
+ "prompt_sha256": "62256b9d496a6478b92ef0a815638ee58e94f51c23439b4ef1089c6a52dcf18c",
+ "device": "cpu (onnxruntime-node)",
+ "transformers_js": "4.3.1",
+ "host": "Apple M4 Pro, Node v26.8.1",
+ "taxonomy": "https://arxiv.org/abs/2503.13657v3",
+ "download_bytes": 928225116,
+ "files": [
+  "config.json",
+  "generation_config.json",
+  "onnx/model_q4.onnx",
+  "tokenizer.json",
+  "tokenizer_config.json"
+ ],
+ "load_ms_from_cache": 1030,
+ "latency_ms": {
+  "median": 42660,
+  "max": 60237
+ },
+ "first_token_ms": {
+  "median": 1810,
+  "max": 2996
+ },
+ "score": {
+  "cases": 14,
+  "exact": 4,
+  "failure_cases": 9,
+  "overlap": 1,
+  "controls": 5,
+  "control_fp": 0,
+  "off_label": 2,
+  "no_opinion": 6,
+  "per_case": [
+   {
+    "case": "anthropic-clean.json",
+    "expected": "none",
+    "got": [],
+    "exact": true,
+    "overlap": null
+   },
+   {
+    "case": "anthropic-context-growth.json",
+    "expected": "none",
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": null
+   },
+   {
+    "case": "anthropic-false-done-after-error.json",
+    "expected": [
+     "FM-3.2"
+    ],
+    "got": [
+     "FM-1.5"
+    ],
+    "exact": false,
+    "overlap": false
+   },
+   {
+    "case": "anthropic-retry-storm.json",
+    "expected": [
+     "FM-1.3"
+    ],
+    "got": [
+     "FM-1.3"
+    ],
+    "exact": true,
+    "overlap": true
+   },
+   {
+    "case": "anthropic-unproven.jsonl",
+    "expected": [
+     "FM-3.3"
+    ],
+    "got": [],
+    "exact": false,
+    "overlap": false
+   },
+   {
+    "case": "chat-text-plain.json",
+    "expected": "none",
+    "got": [],
+    "exact": true,
+    "overlap": null
+   },
+   {
+    "case": "openai-clean.json",
+    "expected": "none",
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": null
+   },
+   {
+    "case": "openai-tool-loop.json",
+    "expected": [
+     "FM-1.3"
+    ],
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": false
+   },
+   {
+    "case": "openai-unhandled-error.jsonl",
+    "expected": [
+     "FM-1.3"
+    ],
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": false
+   },
+   {
+    "case": "openai-unproven-completion.json",
+    "expected": [
+     "FM-3.2"
+    ],
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": false
+   },
+   {
+    "case": "otel-clean.json",
+    "expected": "none",
+    "got": [],
+    "exact": true,
+    "overlap": null
+   },
+   {
+    "case": "otel-growth-unproven.jsonl",
+    "expected": [
+     "FM-3.2"
+    ],
+    "got": [],
+    "exact": false,
+    "overlap": false
+   },
+   {
+    "case": "otel-retry-storm.json",
+    "expected": [
+     "FM-1.3"
+    ],
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": false
+   },
+   {
+    "case": "otel-tool-loop.json",
+    "expected": [
+     "FM-1.3"
+    ],
+    "got": [
+     "FM-1.2"
+    ],
+    "exact": false,
+    "overlap": false
+   }
+  ]
+ },
+ "runs": [
+  {
+   "case": "anthropic-clean.json",
+   "status": "ok",
+   "reason": null,
+   "labels": [],
+   "dropped": [],
+   "raw": "<think>\nOkay, let's tackle this. The user provided an 8-step trace and wants me to label the failures according to the MAST taxonomy. First, I need to go through each step and identify which failure mode applies.\n\nStarting with step #0: the user says to roll out config v7. That's a request, not a failure. So no FM here.\n\nStep #1: the assistant responds with \"Deploying config v7 to staging.\" That's a positive action, so no failure mode here.\n\nStep #2: the assistant calls a tool. The tool call is valid, so maybe no failure here. But maybe the tool call is part of a failure? Wait, the tool call is part of the process. If the tool call is successful, then maybe no failure. But maybe the tool result is a failure? Let me check step #3. Step #3 says the rollout finished with 3/3 pods updated. That's a positive outcome, so no failure here.\n\nStep #4: the assistant says \"Deployed. Checking the health endpoint now.\" That's a positive action. No failure.\n\nStep #5: the assistant calls a tool again. The tool result is 200 OK. So maybe no failure here. But maybe the tool call is part of a failure? Not sure. Let me think. If step #5's tool call is successful, then no failure. But maybe the tool result is a failure? But step #5 is the tool call, so maybe no issue here.\n\nStep #6: the tool result is 200 OK. So no failure here.\n\nStep #7: the assistant says \"Staging reports config_version v7 on the health endpoint with status 200.\" That's a positive outcome. No failure.\n\nSo looking at all steps, none of them show a failure. But the user might expect some failures. Let me check again. Step #3: rollout finished. That's a positive outcome. Step #2: tool call. If the tool call is successful, then no failure. But maybe the tool result is a failure? But step #3 is the result. So no failures. Therefore, the answer should be an empty array.\n</think>\n\n[]",
+   "timing": {
+    "first_token_ms": 1993.3490409999997,
+    "total_ms": 25236.953208000003,
+    "prompt_tokens": 901,
+    "new_tokens": 459
+   }
+  },
+  {
+   "case": "anthropic-context-growth.json",
+   "status": "no_model_opinion",
+   "reason": "no JSON array in the model output",
+   "labels": [],
+   "dropped": [],
+   "raw": "<think>\nOkay, let's tackle this. The user provided a trace with 10 steps and wants me to label failures according to the MAST taxonomy. First, I need to understand each step and see which failure mode applies.\n\nLooking at step 1: The assistant called a tool to read logs. That's a tool call, so maybe that's FM-1.1 or FM-2.1. But the user's message was about the slow job, so maybe the tool call was part of the issue. But step 1 is the first tool call, so maybe it's FM-1.1 because it's about following constraints. But the user's message was about the slow job, so maybe the tool call was part of the issue. Hmm, not sure yet.\n\nStep 2: The tool result shows a full scan. The user's message was about the slow job, so maybe the tool call was part of the issue. But step 2 is the first tool call. So maybe FM-1.1. But step 2 is the result of the first tool call. So maybe FM-1.1 is about following constraints. But the user's message was about the slow job, so maybe the tool call was part of the issue. Not sure yet.\n\nStep 3: Same as step 2. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step 3 is the second tool call. So maybe FM-1.1 again. But step",
+   "timing": {
+    "first_token_ms": 2996.267791000002,
+    "total_ms": 60237.092791,
+    "prompt_tokens": 1057,
+    "new_tokens": 1024
+   }
+  },
+  {
+   "case": "anthropic-false-done-after-error.json",
+   "status": "ok",
+   "reason": null,
+   "labels": [
+    {
+     "mode": "FM-1.5",
+     "name": "Unaware of termination conditions",
+     "step": 2,
+     "quote": "unit payments-worker not found"
+    }
+   ],
+   "dropped": [],
+   "raw": "<think>\nOkay, let's tackle this. The user provided a trace with four steps and wants me to label the failures according to the MAST taxonomy. First, I need to understand each step and see which failure mode applies.\n\nStarting with step #0: the user says \"Restart the payments worker.\" That's a user instruction, so maybe not a failure. Then step #1: the assistant calls the tool to restart the service. That's a tool call, so maybe not a failure. Step #2: the tool returns an error, \"unit payments-worker not found.\" That's a problem with the tool, so FM-1.5: Unaware of termination conditions. The agent didn't recognize that the service was not found, so it's a failure. Step #3: the assistant confirms the restart. So that's a confirmation, not a failure. \n\nSo the failures are FM-1.5 (step 2) and maybe another one? Let me check. The user's message is step #0, which is a user action. The steps 1, 2, 3 are tool calls, results, and confirmation. The only failure is FM-1.5 in step 2. The other steps don't show failures. So the JSON should be [{\"mode\": \"FM-1.5\", \"step\": 2, \"quote\": \"unit payments-worker not found\"}].\n</think>\n\n[{\"mode\": \"FM-1.5\", \"step\": 2, \"quote\": \"unit payments-worker not found\"}]",
+   "timing": {
+    "first_token_ms": 1700.693791999991,
+    "total_ms": 13607.481874999998,
+    "prompt_tokens": 810,
+    "new_tokens": 319
+   }
+  },
+  {
+   "case": "anthropic-retry-storm.json",
+   "status": "ok",
+   "reason": "output cut off; complete labels kept",
+   "labels": [
+    {
+     "mode": "FM-1.3",
+     "name": "Step repetition",
+     "step": 8,
+     "quote": "The migration could not be completed because the orders table stays locked.",
+     "step_given": 3
+    }
+   ],
+   "dropped": [
+    "duplicate"
+   ],
+   "raw": "<think>\nOkay, let's tackle this. The user provided a trace with 9 steps and wants me to label the failures according to the MAST taxonomy. First, I need to go through each step and identify which failure mode applies.\n\nStarting with step 0: the user says \"Apply the pending database migration.\" That's a request, so no failure here. Step 1: assistant says \"Running the migration.\" That's a response, so no failure. Step 2: assistant calls the tool with run_migration. That's a call, so no failure. Step 3: tool returns an error. The error message is about a lock timeout. This is FM-1.3: step repetition. But here, the error is not due to repetition. The agent is just failing to handle the lock. So maybe FM-1.3 is not the right fit. Wait, FM-1.3 is about unnecessary repetition. Here, the agent is failing to handle the lock, not repeating steps. So maybe FM-1.4: loss of conversation history? No, because the error is about a lock, not history. So maybe FM-1.5: unaware of termination conditions? No, because the error is about a lock. Hmm. Let me check each step again.\n\nStep 3: tool returns an error. The error message is lock timeout. So this is FM-1.3: step repetition? No, because the agent is not repeating steps. It's just a lock issue. So maybe FM-1.5: unaware of termination conditions? No, because the agent is not ignoring the termination condition. So maybe FM-1.4: loss of conversation history? No, because the error is not about history. So perhaps FM-1.3 is the correct one here. But why? Because the agent is not repeating steps, but the error is about a lock. So maybe FM-1.3 is the failure. But why? Because the agent is not repeating steps, but the error is about a lock. So maybe FM-1.3 is the correct mode here. Let me check step 4: assistant calls again. The error is still lock timeout. So step 4 is another call. So maybe FM-1.3 again? But why? Because the agent is not repeating steps, but the error is about a lock. So maybe FM-1.3 is the correct mode here. So step 3 and step 4 would be FM-1.3. Then step 5,6,7: same error. So FM-1.3 again. Then step 8: the assistant says the migration could not be completed because the orders table is locked. That's a statement, not a failure. So no mode here. So the failures are steps 3,4,5,6,7. Each step has an error. So FM-1.3 is the mode for these steps. So the failures are FM-1.3 for steps 3-7. Then step 8 is a statement, so no failure. So the JSON array would have entries for FM-1.3 with steps 3-7. Let me confirm each step:\n\nStep 3: tool returns error. Lock timeout. So FM-1.3: step repetition? No, because the agent is not repeating steps. So maybe FM-1.3 again. So steps 3-7 are FM-1.3. Then step 8 is a statement, so no failure. So the failures are FM-1.3 for steps 3-7. So the JSON array would be:\n\n[\n  {\"mode\": \"FM-1.3\", \"step\": 3, \"quote\": \"The migration could not be completed because the orders table stays locked.\"},\n  {\"mode\": \"FM-1.3\", \"step\": 4, \"quote\": \"The migration could not be completed because the orders table stays locked.\"},\n  {\"mode\": \"FM-1.3\", \"step\": 5, \"quote\": \"The migration could not be completed because the orders table stays locked.\"},\n  {\"mode\": \"FM-1.3\", \"step\": 6, \"quote\": \"The migration could not be completed because the orders table stays locked.\"},\n  {\"mode\": \"FM-1.3\", \"step\": 7, \"quote\": \"The migration could not be completed because the orders table stays locked.\"}\n]\n</think>\n\n[{\"mode\": \"FM-1.3\", \"step\": 3, \"quote\": \"The migration could not be completed because the orders table stays locked.\"}, {\"mode\": \"FM-1.3\", \"step\": 4, \"quote\": \"The migration could not be completed because the orders table stays locked.\"}, {\"mode\": \"FM-1.3\", \"step\": 5, \"quote\": \"The migration could not be completed because the orders table stays",
+   "timing": {
+    "first_token_ms": 1813.6631249999919,
+    "total_ms": 52100.12491700001,
+    "prompt_tokens": 919,
+    "new_tokens": 1024
+   }
+  },
+  {
+   "case": "anthropic-unproven.jsonl",
+   "status": "ok",
+   "reason": null,
+   "labels": [],
+   "dropped": [],
+   "raw": "<think>\nOkay, let's tackle this. The user provided a trace with 5 steps, and I need to label the failures according to the MAST taxonomy. Let me go through each step carefully.\n\nFirst, step 0: The user message says to merge the docs PR once CI is green. That's probably a task initiation. Step 1: The assistant responds by checking CI. That's a confirmation step. Step 2: The assistant calls a tool to check CI status. Step 3: The tool gives the result, which is pending with 3 checks. Step 4: The assistant confirms the result and merges the PR.\n\nNow, looking at the failure modes. Let's check each step for a failure. \n\nFM-1.1: Disobedience task constraints. If the user didn't follow, but in step 4, the assistant merged. Maybe not here. \n\nFM-1.2: Disobedience role. If the assistant didn't follow their role, but in step 4, they did. Not applicable.\n\nFM-1.3: Step repetition. If the assistant repeated steps, but in step 4, they merged. Not a repetition.\n\nFM-1.4: Loss of conversation history. If the conversation was lost, but step 4 is confirmed. Not applicable.\n\nFM-1.5: Unaware of termination. If the agent didn't recognize when to stop, but in step 4, they did. Not applicable.\n\nFM-2.1: Conversation reset. If the conversation was reset, but step 4 is confirmed. Not applicable.\n\nFM-2.2: Fail to ask for clarification. If the assistant didn't ask, but in step 4, they merged. Not applicable.\n\nFM-2.3: Task derailment. If the task was not derail, but step 4 is confirmed. Not applicable.\n\nFM-2.4: Information withholding. If the agent withheld info, but step 4 is confirmed. Not applicable.\n\nFM-2.5: Ignored other agent's input. If the agent ignored input, but step 4 is confirmed. Not applicable.\n\nFM-2.6: Reasoning-action mismatch. If the reasoning didn't match action, but step 4 is confirmed. Not applicable.\n\nFM-3.1: Premature termination. If the agent terminated early, but step 4 is confirmed. Not applicable.\n\nFM-3.2: No or incomplete verification. If the agent didn't verify, but step 4 is confirmed. Not applicable.\n\nFM-3.3: Incorrect verification. If the agent verified incorrectly, but step 4 is confirmed. Not applicable.\n\nWait, looking at step 3: The tool result says pending with 3 checks. That's a result, not a failure. So maybe none of the failure modes are triggered here. But the user's message says \"Merge the docs PR once CI is green.\" So step 0 is the task. Step 1 is checking. Step 2 is tool call. Step 3 is result. Step 4 is confirmation. \n\nIn step 4, the assistant confirms the result and merges. So maybe none of the failure modes apply. But the user might have a failure in step 3. Wait, step 3 is the tool result. The failure mode for FM-3.1 is premature termination. If the agent terminated early, but step 4 is confirmed. But step 3 is the result. So maybe no failures. But the user's message is about merging. Maybe step 4 is the confirmation. So no failures. But the example says to label failures. If there are no failures, then the answer is empty. But maybe step 3 is a failure. Let me check again. \n\nStep 3: tool result says pending. That's a result, not a failure. So no failures. Therefore, the JSON array should be empty.\n</think>\n\n[]",
+   "timing": {
+    "first_token_ms": 1806.8907500000205,
+    "total_ms": 37006.456042000005,
+    "prompt_tokens": 832,
+    "new_tokens": 812
+   }
+  },
+  {
+   "case": "chat-text-plain.json",
+   "status": "ok",
+   "reason": null,
+   "labels": [],
+   "dropped": [],
+   "raw": "<think>\nOkay, let's tackle this. The user provided a trace with three steps and wants me to label failures according to the MAST taxonomy. First, I need to understand each step and see which failure mode applies.\n\nLooking at the first step, #0: system message says \"You summarise incident notes.\" That's probably a setup message, not a failure. So no FM-1, FM-2, etc. until the next steps.\n\nStep #1: user message says \"Summarise last week's incidents in one line.\" The assistant's response is \"Three short outages...\" which is a summary. This seems like a successful completion of the task. But maybe there's a failure here. Wait, maybe the user didn't provide the incident details. The assistant's message is a summary, but maybe the user didn't actually provide the incident data. So maybe this is a successful failure? Or is it a case where the user didn't provide the data, leading to a failure? Hmm, the user's message is just a request, not a failure. So maybe step #1 is a successful case, no failure.\n\nStep #2: assistant message says \"Three short outages...\" which is the summary. So this is a successful completion. So no failures. But the user might have expected a failure here. But according to the rules, if there's no failure, answer as empty array. So the answer should be empty.\n</think>\n\n[]",
+   "timing": {
+    "first_token_ms": 1545.156290999992,
+    "total_ms": 12434.283125000016,
+    "prompt_tokens": 807,
+    "new_tokens": 299
+   }
+  },
+  {
+   "case": "openai-clean.json",
+   "status": "no_model_opinion",
+   "reason": "no JSON array in the model output",
+   "labels": [],
+   "dropped": [],
+   "raw": "<think>\nOkay, let's tackle this. The user provided a trace with 7 steps and wants me to label the failures according to the MAST taxonomy. First, I need to understand each step and see which failure mode applies.\n\nStarting with step 1: The system message is \"You are a deployment assistant.\" Then the user message is to bump the cache TTL. That's a straightforward task, so maybe FM-1.1 or FM-2.1. But FM-2.1 is about conversation reset. Step 1 seems to be a user action, not a conversation reset. So maybe FM-1.1 Disobey task specification. The agent didn't adhere to the task, so that's a failure.\n\nStep 2: The tool call sets the config. That's a successful action, so maybe FM-2.1 is not applicable here. Wait, FM-2.1 is about conversation reset. Step 2 is a tool action, not a conversation reset. So maybe FM-1.1 again. But step 1 was a user message, step 2 is a tool call. So maybe FM-1.1 again. But step 1 is a user message, step 2 is a tool call. So maybe FM-1.1 is about disobeying the task. The user is asking to bump the TTL, but the agent did nothing. So that's a failure.\n\nStep 3: The tool result says it was successful. So that's a success, so no failure here.\n\nStep 4: The assistant calls get_config again. That's another tool call. So maybe FM-2.1 again? Or maybe FM-2.2? Wait, FM-2.2 is about failing to ask for clarification. Step 4 is a tool call, not a conversation reset. So maybe FM-2.2 is not applicable here. So step 4 could be a failure if the agent didn't ask for clarification, but the user message was about bumping the TTL. So maybe FM-2.2 isn't applicable here. So step 4 might not be a failure.\n\nStep 5: The tool result returns the same value. That's a confirmation. So no failure here.\n\nStep 6: The assistant responds with the TTL set. That's a confirmation. So no failure here.\n\nSo steps 1 and 2: both are tool calls. Step 1 is a user message, step 2 is a tool call. So maybe FM-1.1 again. But step 1 is a user message, not a failure. So maybe FM-1.1 is about disobeying the task. The user is asking to bump the TTL, but the agent did nothing. So that's a failure.\n\nThen step 3: successful. Step 4: tool call, step 5: result, step 6: response. So no failures except step 1. But step 1 is a user message, not a failure. So maybe there are no failures except step 1. But the user wants to label failures. So maybe step 1 is a failure. But step 1 is a user message, not a failure. So maybe there are no failures. But the user provided 7 steps, and according to the rules, if there are no failures, answer empty array.\n\nWait, let me check again. The failure modes are FM-1.1, FM-1.2, FM-1.3, FM-1.4, FM-1.5, FM-2.1, FM-2.2, FM-2.3, FM-2.4, FM-2.5, FM-2.6, FM-3.1, FM-3.2, FM-3.3.\n\nLooking at each step:\n\nStep 1: user message, no failure.\n\nStep 2: tool call, no failure.\n\nStep 3: tool result, no failure.\n\nStep 4: tool call, no failure.\n\nStep 5: tool result, no failure.\n\nStep 6: assistant message, no failure.\n\nSo according to the steps, there are no failures. So the answer should be an empty array.\n\nBut let me check again. The user's message in step 1 is to bump the TTL. The agent did nothing. So that's a failure. But step 1 is a user message, not a failure. Wait, the user message is part of the interaction. So step 1 is a user message, step 2 is a tool call. So maybe step 1 is a failure. But according to the rules, the failure is only when a specific step shows it. So if step 1 is a failure, then that's the only one. But step 1 is a user message, not a failure. So maybe there are no failures. But the user's message in step 1 is a user message, which is part of the interaction. So",
+   "timing": {
+    "first_token_ms": 1782.109375,
+    "total_ms": 48382.835458000016,
+    "prompt_tokens": 912,
+    "new_tokens": 1024
+   }
+  },
+  {
+   "case": "openai-tool-loop.json",
+   "status": "no_model_opinion",
+   "reason": "no JSON array in the model output",
+   "labels": [],
+   "dropped": [],
+   "raw": "<think>\nOkay, let's tackle this. The user provided a trace with 9 steps and wants me to label the failures according to the MAST taxonomy. First, I need to go through each step and identify which failure mode applies.\n\nStarting with step 0: the system message is set up as a support assistant. That's probably a setup, not a failure. So no FM-1, FM-2, etc. until step 1.\n\nStep 1: user asks about API rate limits. The assistant calls the tool. Step 2: tool call with query and tier. Step 3: tool result says no results. Step 4: same tool call again. Step 5: same result. Step 6: same. Step 7: same. Step 8: assistant message about not finding results. Step 9: no further steps.\n\nNow, looking at the failures. Step 3, 4, 5, 6, 7: the tool is not finding results. That's FM-1.3: step repetition. But the user is asking about the rate limit, so maybe it's a failure to repeat. But step 3 is the first time the tool returns no results. So step 3 is the first failure. Then steps 4-7: same result again. So that's FM-1.3 again. But maybe the user is supposed to repeat? Or maybe the tool is not working. So step 3 is FM-1.3, and steps 4-7 are also FM-1.3. But maybe the user is supposed to repeat. So step 3 is the first failure, and steps 4-7 are repeated steps. So FM-1.3 again. But maybe the user is supposed to repeat. So step 3 is FM-1.3, and steps 4-7 are also FM-1.3. But maybe the user is supposed to repeat. So step 3 is FM-1.3, and steps 4-7 are also FM-1.3. But maybe the user is supposed to repeat. So step 3 is FM-1.3, and steps 4-7 are also FM-1.3. But maybe the user is supposed to repeat. So step 3 is FM-1.3, and steps 4-7 are also FM-1.3. But maybe the user is supposed to repeat. So step 3 is FM-1.3, and steps 4-7 are also FM-1.3. But maybe the user is supposed to repeat. So step 3 is FM-1.3, and steps 4-7 are also FM-1.3. But maybe the user is supposed to repeat. So step 3 is FM-1.3, and steps 4-7 are also FM-1.3. But maybe the user is supposed to repeat. So step 3 is FM-1.3, and steps 4-7 are also FM-1.3. But maybe the user is supposed to repeat. So step 3 is FM-1.3, and steps 4-7 are also FM-1.3. But maybe the user is supposed to repeat. So step 3 is FM-1.3, and steps 4-7 are also FM-1.3. But maybe the user is supposed to repeat. So step 3 is FM-1.3, and steps 4-7 are also FM-1.3. But maybe the user is supposed to repeat. So step 3 is FM-1.3, and steps 4-7 are also FM-1.3. But maybe the user is supposed to repeat. So step 3 is FM-1.3, and steps 4-7 are also FM-1.3. But maybe the user is supposed to repeat. So step 3 is FM-1.3, and steps 4-7 are also FM-1.3. But maybe the user is supposed to repeat. So step 3 is FM-1.3, and steps 4-7 are also FM-1.3. But maybe the user is supposed to repeat. So step 3 is FM-1.3, and steps 4-7 are also FM-1.3. But maybe the user is supposed to repeat. So step 3 is FM-1.3, and steps 4-7 are also FM-1.3. But maybe the user is supposed to repeat. So step 3 is FM-1.3, and steps 4-7 are also FM-1.3. But maybe the user is supposed to repeat. So step 3 is FM-1.3, and steps 4-7 are also FM-1.3. But maybe the user is supposed to repeat. So step 3 is FM-1.3",
+   "timing": {
+    "first_token_ms": 1800.456124999997,
+    "total_ms": 48313.92745799999,
+    "prompt_tokens": 908,
+    "new_tokens": 1024
+   }
+  },
+  {
+   "case": "openai-unhandled-error.jsonl",
+   "status": "no_model_opinion",
+   "reason": "no JSON array in the model output",
+   "labels": [],
+   "dropped": [],
+   "raw": "<think>\nOkay, let's tackle this. The user provided a trace with 9 steps and wants me to label the failures according to the MAST taxonomy. First, I need to go through each step and identify which failure mode applies.\n\nStarting with step 0: the user message is just a request. No failure here. Step 1: the assistant called run_backup with the table and target. That's a tool call, so maybe not a failure. Step 2 and 3 show the same error again, which is a repetition of the same issue. Step 2 and 3 both result in the same error, so that's a failure mode FM-1.5: Unaware of termination conditions. The error message is repeated, so that's a repeat failure.\n\nStep 4: another error, same as step 2 and 3. So FM-1.5 again. Step 5: the assistant responds with a message, which is a conversation. Step 6: the assistant calls snapshot_table. Step 7 and 8: the tool results. Step 8 is a message, so maybe a conversation reset. Step 8 is the last step, so maybe FM-2.2: Fail to ask for clarification. The message in step 8 is about the backup store rejecting writes, so that's a failure.\n\nSo putting it all together:\n\nFM-1.5 (steps 2,3,4), FM-1.5 (steps 2,3,4), FM-2.2 (step 8). Wait, step 5 is a message, not a failure. So the failures are FM-1.5 (steps 2-4) and FM-2.2 (step 8). Also, step 6 and 7-8: maybe FM-2.2 again? Or step 8 is the last one. Let me check:\n\nStep 5: assistant message. Step 6: tool call. Step 7: tool result. Step 8: assistant message. So step 8 is a message, not a failure. So only FM-1.5 (steps 2-4) and FM-2.2 (step 8). But step 8 is a message, not a failure. So only FM-1.5 (steps 2-4) and FM-2.2 (step 8). But step 8 is a message, not a failure. So only FM-1.5 (steps 2-4) and FM-2.2 (step 8). But step 8 is a message, not a failure. So only FM-1.5 (steps 2-4) and FM-2.2 (step 8). But step 8 is a message, not a failure. So only FM-1.5 (steps 2-4) and FM-2.2 (step 8). But step 8 is a message, not a failure. So only FM-1.5 (steps 2-4) and FM-2.2 (step 8). But step 8 is a message, not a failure. So only FM-1.5 (steps 2-4) and FM-2.2 (step 8). But step 8 is a message, not a failure. So only FM-1.5 (steps 2-4) and FM-2.2 (step 8). But step 8 is a message, not a failure. So only FM-1.5 (steps 2-4) and FM-2.2 (step 8). But step 8 is a message, not a failure. So only FM-1.5 (steps 2-4) and FM-2.2 (step 8). But step 8 is a message, not a failure. So only FM-1.5 (steps 2-4) and FM-2.2 (step 8). But step 8 is a message, not a failure. So only FM-1.5 (steps 2-4) and FM-2.2 (step 8). But step 8 is a message, not a failure. So only FM-1.5 (steps 2-4) and FM-2.2 (step 8). But step 8 is a message, not a failure. So only FM-1.5 (steps 2-4) and FM-2.2 (step 8). But step 8 is a message, not a failure. So only FM-1.5 (steps 2-4) and FM-2.2 (step 8). But step 8 is a message, not a failure. So only FM-1.5 (steps 2-4) and FM-2.2 (step 8). But step 8 is a message, not a failure. So only",
+   "timing": {
+    "first_token_ms": 1882.2015409999876,
+    "total_ms": 49422.03108299995,
+    "prompt_tokens": 953,
+    "new_tokens": 1024
+   }
+  },
+  {
+   "case": "openai-unproven-completion.json",
+   "status": "no_model_opinion",
+   "reason": "no JSON array in the model output",
+   "labels": [],
+   "dropped": [],
+   "raw": "<think>\nOkay, let's tackle this. The user provided an 8-step trace and wants me to label the failures according to the MAST taxonomy. First, I need to go through each step and identify which failure mode applies.\n\nStarting with step #0: the user says the login test is failing with a 500. That's a problem, but maybe it's just a message. Then step #1: the assistant responds by looking at the handler. That's probably a conversation step, not a failure. Step #2: the assistant calls a tool to read the file. That's a tool call, so maybe a FM-2.1 or something else. Step #3: the tool returns the result. That's a tool result, so maybe FM-1.3 or something else. Step #4: the assistant says not done yet, the handler crashes. That's a failure, so FM-1.3 step 4. Step #5: the assistant calls a tool again, which is a tool call. Step #6: the tool returns success. Step #7: the assistant confirms the fix. \n\nNow, looking at each step:\n\nStep #0: No failure yet. But the user is stating a problem. Maybe not a failure but a problem statement.\n\nStep #1: Assistant looks at the handler. Not a failure.\n\nStep #2: Assistant calls a tool. That's a tool call, so maybe FM-2.1 or FM-2.2. But step #2 is a tool call, not a conversation reset. So maybe FM-2.1.\n\nStep #3: Tool result. That's a tool result, so maybe FM-1.3 step 3.\n\nStep #4: Assistant says not done yet, handler crashes. That's a failure, FM-1.3 step 4.\n\nStep #5: Assistant calls a tool again. That's another tool call, so maybe FM-2.1 again.\n\nStep #6: Tool result, success. So maybe FM-1.3 step 6.\n\nStep #7: Assistant confirms the fix. That's a confirmation, not a failure.\n\nSo the failures are FM-1.3 steps 3, 4, 5, 6. Let me check each:\n\nFM-1.3: Unnecessary reiteration. Step 3: the tool result is def login(req): ... which is a result, not repetition. Step 4: the handler crashes. Step 5: another tool call. Step 6: success. So FM-1.3 applies to steps 3,4,5,6. But step 6 is a result, not a step. So maybe FM-1.3 applies to steps 3,4,5,6. But step 6 is a result, not a step. So FM-1.3 applies to steps 3,4,5,6. But step 6 is a result, not a step. So FM-1.3 applies to steps 3,4,5,6. But step 6 is a result, not a step. So FM-1.3 applies to steps 3,4,5,6. But step 6 is a result, not a step. So FM-1.3 applies to steps 3,4,5,6. But step 6 is a result, not a step. So FM-1.3 applies to steps 3,4,5,6. But step 6 is a result, not a step. So FM-1.3 applies to steps 3,4,5,6. But step 6 is a result, not a step. So FM-1.3 applies to steps 3,4,5,6. But step 6 is a result, not a step. So FM-1.3 applies to steps 3,4,5,6. But step 6 is a result, not a step. So FM-1.3 applies to steps 3,4,5,6. But step 6 is a result, not a step. So FM-1.3 applies to steps 3,4,5,6. But step 6 is a result, not a step. So FM-1.3 applies to steps 3,4,5,6. But step 6 is a result, not a step. So FM-1.3 applies to steps 3,4,5,6. But step 6 is a result, not a step. So FM-1.3 applies to steps 3,4,5,6. But step 6 is a result, not a step. So FM-1.3 applies to steps 3,4,5,6. But step 6 is a result, not a step. So FM-1.3 applies to steps 3,4,5,6. But",
+   "timing": {
+    "first_token_ms": 1870.1774159999914,
+    "total_ms": 49327.985874999955,
+    "prompt_tokens": 938,
+    "new_tokens": 1024
+   }
+  },
+  {
+   "case": "otel-clean.json",
+   "status": "ok",
+   "reason": null,
+   "labels": [],
+   "dropped": [],
+   "raw": "<think>\nOkay, let's tackle this. The user provided a trace with four steps and wants me to label failures according to the MAST taxonomy. First, I need to understand each step and see which failure mode applies.\n\nLooking at the steps:\n\n#0: Assistant message. No failure here, maybe just a message.\n\n#1: Tool call to get_weather with Paris as city. This is a valid step, no failure yet.\n\n#2: Tool returns a weather result. The result is correct, so no failure here.\n\n#3: Assistant message, Paris is rainy at 14 C. This is a valid message, no failure.\n\nSo, none of the steps 1, 2, 3 show a failure. The user might have intended to label failures, but maybe there's a mistake. But according to the rules, if there's no failure, the answer should be an empty array.\n\nWait, the example given in the rules includes cases where there's no failure. So in this case, since there are no failure modes (FM-1.1 to FM-3.3) or steps with failures, the correct response is to return an empty array.\n\nSo the JSON array should be empty.\n</think>\n\n[]",
+   "timing": {
+    "first_token_ms": 1590.5062499999767,
+    "total_ms": 10526.44179100002,
+    "prompt_tokens": 812,
+    "new_tokens": 252
+   }
+  },
+  {
+   "case": "otel-growth-unproven.jsonl",
+   "status": "ok",
+   "reason": null,
+   "labels": [],
+   "dropped": [],
+   "raw": "<think>\nOkay, let's tackle this. The user provided a trace with 7 steps and wants me to label the failures according to the MAST taxonomy. First, I need to go through each step and identify which failure mode applies.\n\nStarting with step 0: the assistant sent a message. That's probably just communication, so no failure here.\n\nStep 1: The assistant called a tool with run_tests. That's a normal interaction, so maybe not a failure.\n\nStep 2: The tool returned results. The test results were 41 passed, 2 failed. This seems like a success, so maybe not a failure.\n\nStep 3: The assistant sent another message. Again, maybe just communication.\n\nStep 4: The assistant called edit_file. The tool result was \"ok\". So this is a success again.\n\nStep 5: The tool result was \"ok\". So this is a success.\n\nStep 6: The assistant sent a message, and all tests passed, the cart bug is fixed. So this is a success.\n\nNow, looking at the failure modes:\n\nFM-1.1: Disobedience. If the agent didn't follow constraints, but here it's just communication, maybe not.\n\nFM-1.2: Disobedience with role. Not sure if this applies.\n\nFM-1.3: Step repetition. Not mentioned here.\n\nFM-1.4: Loss of conversation history. Not mentioned.\n\nFM-1.5: Unaware of termination. Not mentioned.\n\nFM-2.1: Conversation reset. Not mentioned.\n\nFM-2.2: Ignored clarification. Not mentioned.\n\nFM-2.3: Task derailment. Not mentioned.\n\nFM-2.4: Information withholding. Not mentioned.\n\nFM-2.5: Ignored other agent input. Not mentioned.\n\nFM-2.6: Reasoning-action mismatch. Not mentioned.\n\nFM-3.1: Premature termination. Not mentioned.\n\nFM-3.2: No or incomplete verification. Not mentioned.\n\nFM-3.3: Incorrect verification. Not mentioned.\n\nWait, maybe some steps are missing the failure mode. Let me check again. The user provided 7 steps, but the failure modes are 14. So maybe none of the steps show a failure. But the user wants to label them. But according to the example, if there are no failures, the answer is empty. But in this case, all steps are successful. So no failures. But the user might expect some. Let me check again.\n\nStep 2: tool result was 41 passed, 2 failed. That's a success. Step 5: tool result was ok. Step 6: all tests passed. So all steps are successful. Therefore, no failures. So the JSON array should be empty.\n</think>\n\n[]",
+   "timing": {
+    "first_token_ms": 1641.4936250000028,
+    "total_ms": 24586.54445799999,
+    "prompt_tokens": 857,
+    "new_tokens": 583
+   }
+  },
+  {
+   "case": "otel-retry-storm.json",
+   "status": "no_model_opinion",
+   "reason": "no JSON array in the model output",
+   "labels": [],
+   "dropped": [],
+   "raw": "<think>\nOkay, let's tackle this. The user provided a trace with 13 steps and wants me to label the failures according to the MAST taxonomy. First, I need to go through each step and identify which failure mode applies.\n\nStarting with step 2: the tool call db_query with an error about timeout. That's FM-1.5, which is about not recognizing termination conditions. So that's FM-1.5.\n\nStep 3: the assistant responds but the tool is still timing out. That's FM-1.1, disobeys task constraints. So FM-1.1.\n\nStep 4: same as step 3, but the tool is still timing out. So FM-1.1 again.\n\nStep 5: same error again. FM-1.5.\n\nStep 6: the assistant says to switch to cached count. That's FM-2.2, failure to ask for clarification. So FM-2.2.\n\nStep 7: same as step 6, but the tool is still timing out. FM-1.1 again.\n\nStep 8: same error again. FM-1.5.\n\nStep 9: the database keeps timing out, so switching to cached count. That's FM-2.2 again, but this time it's a switch. So FM-2.2.\n\nStep 10: the tool called read_cache, which returns 18,234. That's FM-2.4, information withholding. So FM-2.4.\n\nStep 11: the tool returns 18,234. That's FM-2.4 again.\n\nStep 12: the assistant says the cached count is 18,234. That's FM-2.4 again.\n\nSo putting this together, the failures are FM-1.5, FM-1.1, FM-2.2, FM-2.4, FM-2.4, FM-2.4. But wait, step 10 and 11 and 12 are about the cached count. So maybe FM-2.4 multiple times. But according to the rules, each failure is labeled once. So maybe there are multiple instances of FM-2.4. But the user's example shows one entry. So in the JSON array, each failure is an object with mode, step, and quote. So the answer should list all the failures in order, each as a separate entry.\n\nLet me check again:\n\nFM-1.5 (steps 2,5,6,7,8,9? Wait step 9 is about switching to cached count. So steps 2-8 are FM-1.5, and steps 9-12 are FM-2.2 and FM-2.4. So the failures are:\n\nFM-1.5 (steps 2,5,8,9?), but step 9 is a switch. So maybe FM-1.5 occurs in steps 2,5,8,9? Or step 9 is a switch, not a failure. So FM-1.5 occurs in steps 2,5,8,9? Or step 9 is a switch, so FM-2.2 again. So the failures are:\n\nFM-1.5 (steps 2,5,8,9?), but step 9 is a switch. So FM-1.5 occurs in steps 2,5,8,9? Or step 9 is a switch, so FM-2.2 again. So the failures are:\n\nFM-1.5 (steps 2,5,8,9?), but step 9 is a switch. So FM-1.5 occurs in steps 2,5,8,9? Or step 9 is a switch, so FM-2.2 again. So the failures are:\n\nFM-1.5 (steps 2,5,8,9?), but step 9 is a switch. So FM-1.5 occurs in steps 2,5,8,9? Or step 9 is a switch, so FM-2.2 again. So the failures are:\n\nFM-1.5 (steps 2,5,8,9?), but step 9 is a switch. So FM-1.5 occurs in steps 2,5,8,9? Or step 9 is a switch, so FM-2.2 again. So the failures are:\n\nFM-1.5 (steps 2,5,8,9?), but step 9 is a switch. So FM-1.5 occurs in steps 2,5,8,9? Or step 9 is a switch, so FM-2.2 again. So the failures are:\n\nFM-1.5 (steps 2,5,8,9?), but step 9 is a switch",
+   "timing": {
+    "first_token_ms": 1854.14870900003,
+    "total_ms": 48822.344374999986,
+    "prompt_tokens": 962,
+    "new_tokens": 1024
+   }
+  },
+  {
+   "case": "otel-tool-loop.json",
+   "status": "ok",
+   "reason": null,
+   "labels": [
+    {
+     "mode": "FM-1.2",
+     "name": "Disobey role specification",
+     "step": 12,
+     "quote": "No incidents are listed..."
+    }
+   ],
+   "dropped": [],
+   "raw": "<think>\nOkay, let's tackle this. The user provided a trace with 13 steps and wants me to label the failures according to the MAST taxonomy. First, I need to understand each step and see which failure modes apply.\n\nLooking at the steps, there are multiple fetch_url calls with the same parameters. Step 12 says \"No incidents are listed...\" which might indicate a failure. But step 11 and 12 both result in HTTP 200, which is expected. So maybe step 12 is the failure. But step 11 also returns HTTP 200. Wait, step 11 and 12 both have the same result. So maybe step 12 is the one that shows the failure, even though the result is the same. That would be FM-1.2: Disobey role specification. But step 12 is the failure. Let me check the steps again.\n\nStep 12: No incidents are listed... which is a failure. But steps 11 and 12 both have the same result. So maybe step 12 is the failure. But step 11 also returns HTTP 200. So maybe step 12 is the one that shows the failure, even though the result is the same. That would be FM-1.2: Disobey role specification. But step 12 is the failure. So the answer would be FM-1.2 with step 12 and quote \"No incidents are listed...\" as the quote.\n\nWait, but step 12 is the failure. So the JSON array should have that entry. Let me confirm. Yes, step 12 is the failure, and the quote is exactly as copied from step 12. So the answer is FM-1.2, step 12, quote \"No incidents are listed...\".\n\nI need to make sure there are no other failures. Let me check the rest. Steps 1-12: all fetch_url with same parameters. Steps 13: assistant message. So no other failures. So the final JSON array is [{\"mode\": \"FM-1.2\", \"step\": 12, \"quote\": \"No incidents are listed...\"}].\n</think>\n\n[{\"mode\": \"FM-1.2\", \"step\": 12, \"quote\": \"No incidents are listed...\"}]",
+   "timing": {
+    "first_token_ms": 1940.4560419999762,
+    "total_ms": 22571.74874999997,
+    "prompt_tokens": 969,
+    "new_tokens": 501
+   }
+  }
+ ]
+}

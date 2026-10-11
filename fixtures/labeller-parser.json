@@ -1,0 +1,36 @@
+{
+  "_about": "Fixtures for parseLabels() in labeller.js. No model is needed: each 'raw' is a made-up model output for the steps below. 'labels' lists [mode, step] pairs that must come out, in order; 'dropped' is how many items must be rejected; 'step_given' marks a label whose quote was found on a different step than the model said.",
+  "steps": [
+    {"i": 0, "role": "user", "kind": "message", "tool": null, "args": null, "text": "Restart the payments worker.", "error": false},
+    {"i": 1, "role": "assistant", "kind": "tool_call", "tool": "restart_service", "args": "{\"name\":\"payments-worker\"}", "text": null, "error": false},
+    {"i": 2, "role": "tool", "kind": "tool_result", "tool": "restart_service", "args": "{\"name\":\"payments-worker\"}", "text": "unit payments-worker not found", "error": true},
+    {"i": 3, "role": "assistant", "kind": "message", "tool": null, "args": null, "text": "Done, the payments worker has been restarted.", "error": false},
+    {"i": 4, "role": "assistant", "kind": "message", "tool": null, "args": null, "text": "To confirm: the worker has been restarted.", "error": false}
+  ],
+  "fixtures": [
+    {"name": "plain array", "raw": "[{\"mode\": \"FM-3.2\", \"step\": 3, \"quote\": \"Done, the payments worker\"}]", "status": "ok", "labels": [["FM-3.2", 3]], "dropped": 0},
+    {"name": "empty array is an opinion", "raw": "[]", "status": "ok", "labels": [], "dropped": 0},
+    {"name": "code fence", "raw": "```json\n[\n  {\"mode\": \"FM-3.2\", \"step\": 3, \"quote\": \"payments worker has been restarted\"}\n]\n```", "status": "ok", "labels": [["FM-3.2", 3]], "dropped": 0},
+    {"name": "think block then answer", "raw": "<think>\nStep 2 failed but step 3 says done.\n</think>\n\n[{\"mode\": \"FM-2.6\", \"step\": 3, \"quote\": \"Done\"}]", "status": "ok", "labels": [["FM-2.6", 3]], "dropped": 0},
+    {"name": "array inside the think block is ignored", "raw": "<think>\nMaybe [{\"mode\": \"FM-1.1\", \"step\": 0, \"quote\": \"Restart the payments worker\"}]? No.\n</think>\n[]", "status": "ok", "labels": [], "dropped": 0},
+    {"name": "unclosed think block (cut off while thinking)", "raw": "<think>\nOkay, let's look at step 2. So maybe FM-1.1 again. So maybe FM-1.1 again.", "status": "no_model_opinion", "labels": [], "dropped": 0},
+    {"name": "trailing prose", "raw": "[{\"mode\": \"FM-3.2\", \"step\": 3, \"quote\": \"Done\"}]\n\nThe agent claimed success without checking.", "status": "ok", "labels": [["FM-3.2", 3]], "dropped": 0},
+    {"name": "leading prose", "raw": "Here is the answer: [{\"mode\": \"FM-3.2\", \"step\": 3, \"quote\": \"Done\"}]", "status": "ok", "labels": [["FM-3.2", 3]], "dropped": 0},
+    {"name": "truncated array keeps complete objects", "raw": "[{\"mode\": \"FM-3.2\", \"step\": 3, \"quote\": \"Done\"}, {\"mode\": \"FM-2.6\", \"step\": 3, \"quo", "status": "ok", "labels": [["FM-3.2", 3]], "dropped": 0, "reason": "no complete JSON array; complete label objects kept"},
+    {"name": "unknown mode id dropped, valid kept", "raw": "[{\"mode\": \"FM-4.1\", \"step\": 3, \"quote\": \"Done\"}, {\"mode\": \"FM-3.2\", \"step\": 3, \"quote\": \"Done\"}]", "status": "ok", "labels": [["FM-3.2", 3]], "dropped": 1},
+    {"name": "non-id mode (a word)", "raw": "[{\"mode\": \"tool_call\", \"step\": 1, \"quote\": \"restart_service\"}]", "status": "no_model_opinion", "labels": [], "dropped": 1},
+    {"name": "step out of range", "raw": "[{\"mode\": \"FM-3.2\", \"step\": 9, \"quote\": \"Done\"}]", "status": "no_model_opinion", "labels": [], "dropped": 1},
+    {"name": "quote copied from the definitions", "raw": "[{\"mode\": \"FM-3.2\", \"step\": 3, \"quote\": \"[FM-3.2 definition text not reproduced]\"}]", "status": "no_model_opinion", "labels": [], "dropped": 1},
+    {"name": "missing quote", "raw": "[{\"mode\": \"FM-3.2\", \"step\": 3}]", "status": "no_model_opinion", "labels": [], "dropped": 1},
+    {"name": "duplicates collapse", "raw": "[{\"mode\": \"FM-3.2\", \"step\": 3, \"quote\": \"Done\"}, {\"mode\": \"FM-3.2\", \"step\": 3, \"quote\": \"has been restarted\"}]", "status": "ok", "labels": [["FM-3.2", 3]], "dropped": 1},
+    {"name": "loose mode spellings", "raw": "[{\"mode\": \"3.2\", \"step\": 3, \"quote\": \"Done\"}, {\"id\": \"FM 2.6: Reasoning-action mismatch\", \"step\": \"#3\", \"quote\": \"Done\"}]", "status": "ok", "labels": [["FM-3.2", 3], ["FM-2.6", 3]], "dropped": 0},
+    {"name": "quote on the wrong step, unique elsewhere: moved", "raw": "[{\"mode\": \"FM-3.2\", \"step\": 1, \"quote\": \"unit payments-worker not found\"}]", "status": "ok", "labels": [["FM-3.2", 2]], "dropped": 0, "step_given": 1},
+    {"name": "quote on the wrong step, found twice: dropped", "raw": "[{\"mode\": \"FM-3.2\", \"step\": 1, \"quote\": \"has been restarted\"}]", "status": "no_model_opinion", "labels": [], "dropped": 1},
+    {"name": "wrapper object", "raw": "{\"labels\": [{\"mode\": \"FM-3.2\", \"step\": 3, \"quote\": \"Done\"}]}", "status": "ok", "labels": [["FM-3.2", 3]], "dropped": 0},
+    {"name": "single object", "raw": "{\"mode\": \"FM-3.2\", \"step\": 3, \"quote\": \"Done\"}", "status": "ok", "labels": [["FM-3.2", 3]], "dropped": 0, "reason": "no complete JSON array; complete label objects kept"},
+    {"name": "prose only", "raw": "The agent failed to verify the restart.", "status": "no_model_opinion", "labels": [], "dropped": 0},
+    {"name": "empty output", "raw": "", "status": "no_model_opinion", "labels": [], "dropped": 0},
+    {"name": "invalid JSON", "raw": "[{mode: FM-3.2, step: 3}]", "status": "no_model_opinion", "labels": [], "dropped": 0},
+    {"name": "brackets inside a quote string", "raw": "[{\"mode\": \"FM-1.3\", \"step\": 1, \"quote\": \"restart_service({\\\"name\\\":\\\"payments-worker\\\"})\"}]", "status": "ok", "labels": [["FM-1.3", 1]], "dropped": 0}
+  ]
+}

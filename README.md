@@ -1,8 +1,8 @@
 # Agent Trace Clinic
 
-Paste an AI agent's trace and get a triage report. This repository holds the parts that need no model: a normaliser that turns four trace formats into one step list, deterministic detectors that look for common agent failures, a usage calculator, a test suite of synthetic traces with their expected findings, and a small CLI.
+Paste an AI agent's trace and get a triage report. This repository holds the parts that need no model: a normaliser that turns four trace formats into one step list, deterministic detectors that look for common agent failures, a usage calculator, a test suite of synthetic traces with their expected findings, and a small CLI. It also holds an optional model pass (`labeller.js`, see [Model pass](#model-pass)), in which a small model running in the visitor's browser gives a labelled second opinion.
 
-Everything is plain JavaScript (ES modules), with no build step and no dependencies. `normalise.js`, `detectors.js` and `usage.js` use no Node built-ins, so the same files run in a browser page and under Node. Nothing is sent anywhere: the analysis is local.
+Everything is plain JavaScript (ES modules), with no build step and no dependencies. `normalise.js`, `detectors.js`, `usage.js` and `labeller.js` use no Node built-ins, so the same files run in a browser page and under Node. Nothing is sent anywhere: the analysis is local. The optional model pass downloads a library and model weights once, but the trace never leaves the page.
 
 ```
 node test.mjs                      # run every case and unit check
@@ -107,7 +107,125 @@ A completion claim is a sentence (split on `.`, `!`, `?` and newlines) that cont
 | `mixed-formats.json` | none | OpenAI tool_calls with an Anthropic tool_result | error |
 | `bad-line.jsonl` | none | line 3 is not valid JSON | error naming line 3 |
 
-`node test.mjs` runs every case plus unit checks on canonical JSON, each format's edge cases, each detector's thresholds, and usage with and without a price. It prints pass and fail counts and exits non-zero on any failure.
+`node test.mjs` runs every case plus unit checks on canonical JSON, each format's edge cases, each detector's thresholds, and usage with and without a price. It also checks the model-pass prompt and parser against `fixtures/labeller-parser.json`, without loading a model. It prints pass and fail counts and exits non-zero on any failure.
+
+`cases/mast-expected.json` gives the MAST failure modes each case should get (see Model pass below), with a reason for each one. Like `expected.json`, it was written from each case's design. It was committed before any model was run on the cases.
+
+## Model pass
+
+`labeller.js` is an optional second opinion. A small language model reads the normalised steps and names failure modes from MAST, the Multi-Agent System Failure Taxonomy (Cemri et al., "Why Do Multi-Agent LLM Systems Fail?", [arXiv:2503.13657v3](https://arxiv.org/abs/2503.13657v3), Appendix A). MAST has 14 modes:
+
+| Category | Modes |
+| --- | --- |
+| System design issues | FM-1.1 Disobey task specification, FM-1.2 Disobey role specification, FM-1.3 Step repetition, FM-1.4 Loss of conversation history, FM-1.5 Unaware of termination conditions |
+| Inter-agent misalignment | FM-2.1 Conversation reset, FM-2.2 Fail to ask for clarification, FM-2.3 Task derailment, FM-2.4 Information withholding, FM-2.5 Ignored other agent's input, FM-2.6 Reasoning-action mismatch |
+| Task verification | FM-3.1 Premature termination, FM-3.2 No or incomplete verification, FM-3.3 Incorrect verification |
+
+`labeller.js` carries the paper's definition of each mode, word for word, and puts all 14 in the prompt. MAST was built from multi-agent traces. The cases here are single-agent, so FM-2.1 to FM-2.5 rarely apply.
+
+### What it does
+
+- **It runs in the visitor's browser.** In a page, `loadLabeller()` imports transformers.js 4.3.1 from the jsDelivr CDN. It then downloads the model weights from Hugging Face at a pinned commit, so the weights cannot change under the page. The browser caches both after the first load. The model runs on the visitor's machine: the trace text is never sent anywhere. It uses WebGPU with `q4f16` weights (0.58 GB) when the GPU supports 16-bit float shaders. Otherwise it falls back to WebAssembly with `q4` weights (0.93 GB). Under Node, pass the transformers.js module in: `loadLabeller({ transformers })`. The core files still have no dependencies.
+- **The prompt sees only the steps.** It holds the 14 definitions and the steps, rendered one line each (`#i role kind: text`). It does not include the detector findings, so the model's opinion is independent of them.
+- **The model answers with a JSON list** such as `[{"mode": "FM-3.2", "step": 3, "quote": "Done, the payments worker"}]`. An empty list means the model saw no failure.
+- **transformers.js has no grammar-constrained decoding,** so the parser enforces the format instead:
+  - Decoding is greedy, with a token cap.
+  - Any `<think>` block and any code fences are stripped.
+  - The first JSON array is read. If the output was cut off, the complete label objects that did come out are kept.
+- **Each label is checked:**
+  - The mode must be one of the 14 ids.
+  - The step must exist in the trace.
+  - The quote must appear in that step's line. If the quote appears in exactly one other step, the label is moved there, and `step_given` records the step the model named.
+  - A label that fails a check is dropped on its own. Duplicates are dropped too.
+- **When the output is unusable, the result is "no model opinion".** That covers output with no JSON list in it, and output where every label failed its check.
+- **Model opinion stays separate from the detectors.** `toFindings()` returns findings with `source: "model_opinion"`, `severity: "opinion"` and ids such as `mast:FM-3.2`. Each one is explained as a small model's reading of the trace. They are never merged into `runDetectors()` output. The deterministic findings remain the report.
+
+### Bake-off
+
+`bakeoff/` is dev-only. It has its own `package.json` with `@huggingface/transformers` 4.3.1 as a devDependency. It runs each candidate in Node over the 14 cases that parse and scores the answers against `cases/mast-expected.json`. The three cases the normaliser rejects are excluded.
+
+```
+cd bakeoff && npm install
+node run.mjs --model onnx-community/Qwen3-0.6B-ONNX --revision 1e0a4a196ecabdf9a879664110574563d3f372d3 --dtype q4 --variant v3-thinking --thinking
+node table.mjs     # the table below, re-scored with the current parser, and the pick rule
+```
+
+`run.mjs` calls `labeller.js` itself, so the bake-off measures the same prompt, generation call and parser that the Clinic ships. Weights are cached outside the repository. Each result in `bakeoff/results/` records:
+
+- the model revision sha, verified from the revision-keyed cache path;
+- the files the dtype needs;
+- a hash of the prompt;
+- every raw output.
+
+Metrics:
+
+- **Exact:** the set of modes named equals the expected set, out of 14. A case expected to have no failure counts only if the model answers `[]`.
+- **Any-overlap:** at least one expected mode is named, counted over the 9 failure cases.
+- **Control false positives:** any mode named on the 5 cases expected to have none.
+- **No model opinion:** output the parser could not use. It counts as a miss everywhere.
+
+The pick rule was written in `bakeoff/score.mjs` before any model ran:
+
+- **Usable** means at most 2 of 14 with no model opinion, and at most 1 of 5 control false positives.
+- Among usable models, the smallest download wins. A larger model wins only if it beats the smallest by at least 2 of the 9 failure cases on any-overlap, with no more control false positives.
+- If no model is usable, the smallest is still wired in, and this section says it missed the bar.
+
+Conditions of the runs:
+
+- **Machine:** Node 26 on an Apple M4 Pro, CPU only (onnxruntime-node). These latencies are not browser numbers. Load time is from the local cache; download time depends on the network and is not shown.
+- **Download:** the files the given dtype needs at the pinned revision.
+- **Decoding:** greedy, with at most 160 new tokens, or 1024 with thinking on.
+- **Sample size:** 14 synthetic cases is a small sample. The table picks a default; it does not rank the models in general.
+
+| Model @ revision | dtype | Variant | Download | Load (cached) | Latency per case, median / max | First token, median | Exact (of 14) | Any-overlap (of 9) | Control false positives (of 5) | No model opinion (of 14) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| onnx-community/Qwen3-0.6B-ONNX @ 1e0a4a1 | q4f16 | v3-plain | 0.58 GB | 0.8 s | 4.3 s / 8.7 s | 3.0 s | 0 | 0 | 2 | 7 |
+| onnx-community/Qwen3-0.6B-ONNX @ 1e0a4a1 | q4 | v2-plain | 0.93 GB | 0.9 s | 3.7 s / 9.4 s | 1.7 s | 0 | 0 | 4 | 6 |
+| onnx-community/Qwen3-0.6B-ONNX @ 1e0a4a1 | q4 | v3-plain | 0.93 GB | 1.0 s | 3.3 s / 7.6 s | 1.9 s | 0 | 0 | 2 | 7 |
+| onnx-community/Qwen3-0.6B-ONNX @ 1e0a4a1 | q4 | v3-thinking | 0.93 GB | 1.0 s | 42.7 s / 60.2 s | 1.8 s | 4 | 1 | 0 | 6 |
+| onnx-community/Qwen3-0.6B-ONNX @ 1e0a4a1 | q4 | v3-thinking-rp1.1 | 0.93 GB | 1.0 s | 38.3 s / 56.9 s | 1.8 s | 3 | 0 | 0 | 8 |
+| HuggingFaceTB/SmolLM3-3B-ONNX @ af50613 | q4 | v2-plain | 2.85 GB | 6.1 s | 9.4 s / 11.0 s | 3.9 s | 0 | 0 | 0 | 14 |
+| HuggingFaceTB/SmolLM3-3B-ONNX @ af50613 | q4 | v3-plain | 2.85 GB | 4.7 s | 9.1 s / 11.7 s | 4.4 s | 0 | 0 | 0 | 14 |
+| HuggingFaceTB/SmolLM3-3B-ONNX @ af50613 | q4 | v3-thinking | 2.85 GB | 1.6 s | 49.3 s / 54.4 s | 4.4 s | 0 | 0 | 0 | 14 |
+
+#### Candidates
+
+- **Qwen3-0.6B:** `onnx-community/Qwen3-0.6B-ONNX`, revision `1e0a4a196ecabdf9a879664110574563d3f372d3`. Apache-2.0 base model, not gated.
+- **SmolLM3-3B:** there is no `onnx-community/SmolLM3-3B-ONNX`; the Hub API returns 401 for that name. The run used the official `HuggingFaceTB/SmolLM3-3B-ONNX`, revision `af50613703fb6f10ffcb21b27ad48edcb8334232`, which is Apache-2.0, not gated, and built for transformers.js.
+
+Both are hybrid reasoning models. "Plain" turns thinking off; "thinking" leaves it on.
+
+#### Prompt variants
+
+All variants are kept, including the ones that scored zero.
+
+- **v1 and v2, prefilled.** Two early prompts started the answer with `[`. v1 had an example with `"step": 0`. v2 used a placeholder example. Their result files were overwritten and are not kept. From the run logs:
+  - Qwen3-0.6B q4 (v1 and v2 alike): exact 0, any-overlap 0, control false positives 3, no model opinion 9.
+  - SmolLM3 q4 (v2): no model opinion on all 14.
+- **v2-plain.** v2 without the prefill. These files predate prompt hashing.
+- **v3.** Lists the 14 allowed ids and uses an example (`FM-2.4` at step 5) that matches no expected label.
+- **rp1.1.** Adds a repetition penalty of 1.1.
+
+The table re-parses every saved output with the current parser. The quote-relocation rule was added after the v2-plain runs, so Qwen3's v2-plain row differs a little from what that run printed.
+
+#### Pick: Qwen3-0.6B, thinking on. It did not meet the bar.
+
+No candidate was usable under the rule, so the rule's last clause applies: the smallest model, Qwen3-0.6B, is wired in. The rule does not choose between variants of one model, so that choice is ours:
+
+- **Thinking is on.** It is the only setting with no false positives on the five clean traces. With thinking off, the model named failures on 2 of them, which is worse than no opinion.
+- **It is weak even so.** It names an expected mode on 1 of the 9 failure cases. On 6 of 14 cases it gives no opinion. In all 6 it was still reasoning, often in a loop, when it reached the 1024-token cap.
+- **It is slow on CPU.** A trace takes about 40 to 60 s on this machine's CPU. Treat the model pass as experimental.
+- **`q4f16` was checked on CPU.** With thinking off, it gave the same output as `q4` on all 14 cases, character for character. The thinking runs used `q4`.
+
+What did not work:
+
+- **SmolLM3-3B never produced a usable answer.** Its outputs used words such as `"tool_call"` or `"system"` as mode names, or fell into repeated text, even though the prompt lists the 14 ids.
+  - It answers short prompts coherently (`bakeoff/sanity.mjs`), so the build runs. Whether the problem is the q4 weights or the model was not found out.
+  - Its 8-bit weights (3.1 GB) were not tried.
+  - At 2.85 GB, it would also be a heavy download for a page.
+- **The repetition penalty did not stop Qwen3's loops while thinking.**
+
+The bake-off can be re-run on other small models with the same harness. The bar stays the same.
 
 ## Limits
 

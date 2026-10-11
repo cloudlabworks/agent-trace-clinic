@@ -1,5 +1,6 @@
 // Agent Trace Clinic tests: node test.mjs
-// Runs every case in cases/ against cases/expected.json, plus unit checks.
+// Runs every case in cases/ against cases/expected.json, plus unit checks, plus the
+// model-pass parser against fixtures/labeller-parser.json (no model is loaded).
 // Prints pass/fail counts and exits non-zero on any failure.
 
 import { readFileSync, readdirSync } from 'node:fs';
@@ -16,6 +17,7 @@ import {
   findClaim,
 } from './detectors.js';
 import { usage } from './usage.js';
+import { MAST_MODES, buildMessages, parseLabels, toFindings, loadLabeller, stepLine } from './labeller.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const casesDir = join(here, 'cases');
@@ -214,6 +216,50 @@ check('unproven: user text is never a claim', detectUnprovenCompletion([S(0, 'me
   }
   check('usage: half a split price rejected', threw);
   check('usage: incomplete counts are flagged', usage([S(0, 'message', { tokens_in: 5 })]).per_task.complete === false);
+}
+
+// ------------------------------------------------------------------ model pass (no model)
+
+{
+  const fx = JSON.parse(readFileSync(join(here, 'fixtures', 'labeller-parser.json'), 'utf8'));
+  for (const f of fx.fixtures) {
+    const r = parseLabels(f.raw, fx.steps);
+    const got = r.labels.map((l) => [l.mode, l.step]);
+    check(`parser: ${f.name}: status`, r.status === f.status, `${r.status} (${r.reason})`);
+    check(`parser: ${f.name}: labels`, JSON.stringify(got) === JSON.stringify(f.labels), JSON.stringify(got));
+    check(`parser: ${f.name}: dropped`, r.dropped.length === f.dropped, `${r.dropped.length}: ${r.dropped.map((d) => d.why).join('; ')}`);
+    if ('reason' in f) check(`parser: ${f.name}: reason`, r.reason === f.reason, String(r.reason));
+    if ('step_given' in f) check(`parser: ${f.name}: step_given`, r.labels[0]?.step_given === f.step_given);
+    if (r.status !== 'ok') check(`parser: ${f.name}: no opinion has no labels`, r.labels.length === 0);
+  }
+  check('parser: null input', parseLabels(null, fx.steps).status === 'no_model_opinion');
+
+  const ids = MAST_MODES.map((m) => m.id);
+  check('MAST: 14 modes', ids.length === 14 && new Set(ids).size === 14);
+  check('MAST: ids FM-1.1..1.5, 2.1..2.6, 3.1..3.3', ids.join(',') === 'FM-1.1,FM-1.2,FM-1.3,FM-1.4,FM-1.5,FM-2.1,FM-2.2,FM-2.3,FM-2.4,FM-2.5,FM-2.6,FM-3.1,FM-3.2,FM-3.3');
+
+  const { steps } = normalise(readFileSync(join(casesDir, 'anthropic-false-done-after-error.json'), 'utf8'));
+  const msgs = buildMessages(steps);
+  const all = msgs.map((m) => m.content).join('\n');
+  check('prompt: every mode id and definition is in the prompt', MAST_MODES.every((m) => all.includes(`${m.id} ${m.name}: ${m.definition}`)));
+  check('prompt: every step line is in the prompt', steps.every((st) => all.includes(`#${st.i} ${stepLine(st)}`)));
+  check('prompt: detector findings are not in the prompt', !/unproven_completion|tool_loop|retry_storm|receipt/.test(all));
+  check('prompt: /no_think only when thinking is off', msgs[0].content.endsWith('/no_think') && !buildMessages(steps, { thinking: true })[0].content.includes('/no_think'));
+  check('prompt: deterministic', JSON.stringify(buildMessages(steps)) === JSON.stringify(msgs));
+
+  const ok = parseLabels('[{"mode": "FM-3.2", "step": 3, "quote": "Done"}]', steps);
+  const fnd = toFindings(ok);
+  check('findings: model opinion is marked as such', fnd.length === 1 && fnd[0].source === 'model_opinion' && fnd[0].id === 'mast:FM-3.2' && fnd[0].severity === 'opinion' && /Model opinion/.test(fnd[0].explain));
+  check('findings: no model opinion gives no findings', toFindings(parseLabels('nonsense', steps)).length === 0);
+  check('findings: detectors never emit model opinions', runDetectors(steps).every((d) => !d.id.startsWith('mast:') && d.source !== 'model_opinion'));
+
+  let msg = '';
+  try {
+    await loadLabeller();
+  } catch (e) {
+    msg = e.message;
+  }
+  check('loadLabeller: under Node it asks for the transformers module', msg.includes('pass { transformers }'), msg);
 }
 
 // ------------------------------------------------------------------ report

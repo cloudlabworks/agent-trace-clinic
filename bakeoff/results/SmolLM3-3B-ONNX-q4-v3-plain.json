@@ -1,0 +1,377 @@
+{
+ "model": "HuggingFaceTB/SmolLM3-3B-ONNX",
+ "revision": "af50613703fb6f10ffcb21b27ad48edcb8334232",
+ "dtype": "q4",
+ "variant": "v3-plain",
+ "thinking": false,
+ "answer_prefix": "",
+ "prompt_sha256": "3a123325b519c97f9ce54985333e193f14285b368886dcf9fee2266ef8fc3063",
+ "device": "cpu (onnxruntime-node)",
+ "transformers_js": "4.3.1",
+ "host": "Apple M4 Pro, Node v26.8.1",
+ "taxonomy": "https://arxiv.org/abs/2503.13657v3",
+ "download_bytes": 2854433696,
+ "files": [
+  "config.json",
+  "generation_config.json",
+  "onnx/model_q4.onnx",
+  "onnx/model_q4.onnx_data",
+  "tokenizer.json",
+  "tokenizer_config.json"
+ ],
+ "load_ms_from_cache": 4692,
+ "latency_ms": {
+  "median": 9080,
+  "max": 11720
+ },
+ "first_token_ms": {
+  "median": 4373,
+  "max": 4969
+ },
+ "score": {
+  "cases": 14,
+  "exact": 0,
+  "failure_cases": 9,
+  "overlap": 0,
+  "controls": 5,
+  "control_fp": 0,
+  "off_label": 0,
+  "no_opinion": 14,
+  "per_case": [
+   {
+    "case": "anthropic-clean.json",
+    "expected": "none",
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": null
+   },
+   {
+    "case": "anthropic-context-growth.json",
+    "expected": "none",
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": null
+   },
+   {
+    "case": "anthropic-false-done-after-error.json",
+    "expected": [
+     "FM-3.2"
+    ],
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": false
+   },
+   {
+    "case": "anthropic-retry-storm.json",
+    "expected": [
+     "FM-1.3"
+    ],
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": false
+   },
+   {
+    "case": "anthropic-unproven.jsonl",
+    "expected": [
+     "FM-3.3"
+    ],
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": false
+   },
+   {
+    "case": "chat-text-plain.json",
+    "expected": "none",
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": null
+   },
+   {
+    "case": "openai-clean.json",
+    "expected": "none",
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": null
+   },
+   {
+    "case": "openai-tool-loop.json",
+    "expected": [
+     "FM-1.3"
+    ],
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": false
+   },
+   {
+    "case": "openai-unhandled-error.jsonl",
+    "expected": [
+     "FM-1.3"
+    ],
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": false
+   },
+   {
+    "case": "openai-unproven-completion.json",
+    "expected": [
+     "FM-3.2"
+    ],
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": false
+   },
+   {
+    "case": "otel-clean.json",
+    "expected": "none",
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": null
+   },
+   {
+    "case": "otel-growth-unproven.jsonl",
+    "expected": [
+     "FM-3.2"
+    ],
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": false
+   },
+   {
+    "case": "otel-retry-storm.json",
+    "expected": [
+     "FM-1.3"
+    ],
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": false
+   },
+   {
+    "case": "otel-tool-loop.json",
+    "expected": [
+     "FM-1.3"
+    ],
+    "got": "no model opinion",
+    "exact": false,
+    "overlap": false
+   }
+  ]
+ },
+ "runs": [
+  {
+   "case": "anthropic-clean.json",
+   "status": "no_model_opinion",
+   "reason": "no JSON array in the model output",
+   "labels": [],
+   "dropped": [],
+   "raw": "[{\"mode\": \"2.6\", \"quote\": \"status\", \"quote\": \"line\", \"line\": \"1\", \"line\": \"2\", \"line\": \"3\", \"line\": \"4\", \"line\": \"5\", \"line\": \"6\", \"line\": \"7\", \"line\": \"8\", \"line\": \"9\", \"line\": \"10\", \"line\": \"11\", \"line\": \"12\", \"line\": \"13\", \"line\": \"14\", \"line\": \"15\", \"line\": \"16\", \"line\": \"17\", \"line\": \"18\", \"line\": \"19\", \"line\": \"20\", \"line\": \"21\", \"line\": \"22\", \"line\": \"23\", \"",
+   "timing": {
+    "first_token_ms": 4550.147292000001,
+    "total_ms": 10783.028125,
+    "prompt_tokens": 935,
+    "new_tokens": 160
+   }
+  },
+  {
+   "case": "anthropic-context-growth.json",
+   "status": "no_model_opinion",
+   "reason": "every label was invalid",
+   "labels": [],
+   "dropped": [
+    "step not in trace"
+   ],
+   "raw": "```json\n[\n    {\n        \"mode\": \"FM-2.5\",\n        \"step\": 10,\n        \"quote\": \"The slow table scan on events\"\n    }\n]\n```\n\nThe failure is identified as a slow table scan on events, which is a mode of failure that involves a slow or inefficient process of scanning or checking, leading to unnecessary delays or inefficiencies in the system. In this case, the slow table scan on events is a result of the inefficient scanning process that is causing unnecessary delays in the system.",
+   "timing": {
+    "first_token_ms": 4968.617749999999,
+    "total_ms": 9675.843917,
+    "prompt_tokens": 1058,
+    "new_tokens": 110
+   }
+  },
+  {
+   "case": "anthropic-false-done-after-error.json",
+   "status": "no_model_opinion",
+   "reason": "every label was invalid",
+   "labels": [],
+   "dropped": [
+    "step not in trace"
+   ],
+   "raw": "```json\n{\n    \"mode\": \"FM-2.4\",\n    \"step\": 5,\n    \"quote\": \"words copied from step 5\"\n}\n```\n\n```",
+   "timing": {
+    "first_token_ms": 3854.368375000002,
+    "total_ms": 5151.246708000002,
+    "prompt_tokens": 848,
+    "new_tokens": 39
+   }
+  },
+  {
+   "case": "anthropic-retry-storm.json",
+   "status": "no_model_opinion",
+   "reason": "every label was invalid",
+   "labels": [],
+   "dropped": [
+    "step not in trace"
+   ],
+   "raw": "[{\"mode\": \"FM-2.4\", \"step\": 9, \"quote\": \"mode was: 'the one'\"}]",
+   "timing": {
+    "first_token_ms": 4383.849082999997,
+    "total_ms": 5477.122207999997,
+    "prompt_tokens": 948,
+    "new_tokens": 31
+   }
+  },
+  {
+   "case": "anthropic-unproven.jsonl",
+   "status": "no_model_opinion",
+   "reason": "no JSON array in the model output",
+   "labels": [],
+   "dropped": [],
+   "raw": "[{\"mode\": \"1\", \"step\": 1, \"quote\": \"step:1.2\", \"trace\": \"step:1.2\", \"quote\": \"step:1.2\", \"trace\": \"step:1.2\", \"quote\": \"step:1.2\", \"trace\": \"step:1.2\", \"quote\": \"step:1.2\", \"trace\": \"step:1.2\", \"trace\": \"1.2\", \"mode\": \"1.2\", \"trace\": \"1.2\", \"mode\": \"1.2\", \"trace\": \"1.2\", \"mode\": \"1.2\", \"trace\": \"1.2\", \"mode\": \"1.2\", \"trace\":",
+   "timing": {
+    "first_token_ms": 3980.2354169999962,
+    "total_ms": 9616.014208,
+    "prompt_tokens": 868,
+    "new_tokens": 160
+   }
+  },
+  {
+   "case": "chat-text-plain.json",
+   "status": "no_model_opinion",
+   "reason": "every label was invalid",
+   "labels": [],
+   "dropped": [
+    "step not in trace"
+   ],
+   "raw": "```json\n[\n    {\n        \"mode\": \"FM-2.4\",\n        \"step\": 5,\n        \"quote\": \"Three outages were traced, but the root cause was not identified.\"\n    }\n]\n```",
+   "timing": {
+    "first_token_ms": 3829.037541999998,
+    "total_ms": 5531.780542,
+    "prompt_tokens": 845,
+    "new_tokens": 48
+   }
+  },
+  {
+   "case": "openai-clean.json",
+   "status": "no_model_opinion",
+   "reason": "no JSON array in the model output",
+   "labels": [],
+   "dropped": [],
+   "raw": "{\n  \"mode\": \"FM-3.1\",\n  \"step\": \"ant\",\n  \"quote\": \"no\",\n  \"trace\": 7,\n  \"quote\": \"ant\",\n  \"mode\": \"set\",\n  \"key\": \"ant\",\n  \"value\": \"message\",\n  \"shape\": \"json\",\n  \"shape\": \"array\",\n  \"shape\": \"list\",\n  \"shape\": \"tuple\",\n  \"shape\": \"set\",\n  \"shape\": \"dict\",\n  \"shape\": \"table\",\n  \"shape\": \"formula\",\n  \"shape\": \"formula\",\n  \"shape\": \"formula\",\n  \"shape\": \"formula\",\n  \"shape\": \"formula\",\n  \"shape\": \"formula\",\n  \"shape\": \"formula\",\n ",
+   "timing": {
+    "first_token_ms": 4361.6963749999995,
+    "total_ms": 10596.957999999999,
+    "prompt_tokens": 938,
+    "new_tokens": 160
+   }
+  },
+  {
+   "case": "openai-tool-loop.json",
+   "status": "no_model_opinion",
+   "reason": "every label was invalid",
+   "labels": [],
+   "dropped": [
+    "step not in trace"
+   ],
+   "raw": "```json\n[{\"mode\": \"FM-2.4\", \"quote\": \"No results.\", \"step\": 9, \"line\": \"No line.\"}\n```\n\n```json\n\n```\n\n```json\n```\n\n```json\n```",
+   "timing": {
+    "first_token_ms": 4353.644333999997,
+    "total_ms": 6243.827000000005,
+    "prompt_tokens": 946,
+    "new_tokens": 52
+   }
+  },
+  {
+   "case": "openai-unhandled-error.jsonl",
+   "status": "no_model_opinion",
+   "reason": "every label was invalid",
+   "labels": [],
+   "dropped": [
+    "quote not found in that step"
+   ],
+   "raw": "```json\n{\n    \"mode\": \"FM-2.4\",\n    \"step\": 8,\n    \"quote\": \"snapshot_table -> error: snapshot exists but orders are rejected\",\n    \"trace\": \"trace -> 9\",\n    \"message\": \"backup rejects writes\",\n    \"solution\": \"change permission to allow writes\"\n}\n```",
+   "timing": {
+    "first_token_ms": 4778.2911669999885,
+    "total_ms": 7686.357457999999,
+    "prompt_tokens": 983,
+    "new_tokens": 72
+   }
+  },
+  {
+   "case": "openai-unproven-completion.json",
+   "status": "no_model_opinion",
+   "reason": "no JSON array in the model output",
+   "labels": [],
+   "dropped": [],
+   "raw": "```plaintext\nMode: FM-3.1\n```\n\n### Explanation:\n- **Mode**: The mode of failure is \"Mode 3.1\" which is defined as \"Failure to recognize the end of a process or the completion of a task, leading to the continuation of the process or the task without proper verification.\"\n- **Step**: The step where the issue was identified is 7, which is the seventh step in the process.\n- **Quote**: The quote is \"The 7th step: The final step in the process where the issue is resolved and the process is completed.\"\n- **Trace**: The trace is the sequence of events that led to the failure, which in this case is the failure to recognize the end of the process.\n- **Tool**: The tool used",
+   "timing": {
+    "first_token_ms": 4559.664166999995,
+    "total_ms": 11155.330541999996,
+    "prompt_tokens": 970,
+    "new_tokens": 160
+   }
+  },
+  {
+   "case": "otel-clean.json",
+   "status": "no_model_opinion",
+   "reason": "every label was invalid",
+   "labels": [],
+   "dropped": [
+    "quote not found in that step"
+   ],
+   "raw": "```json\n{\n    \"mode\": \"FM-2.4\",\n    \"step\": 3,\n    \"quote\": \"words copied from step 3\"\n}\n```\n\n```json\n\n```\n\n```json\n\n```json\n\n```json\n\n```json\n\n```",
+   "timing": {
+    "first_token_ms": 3982.010249999992,
+    "total_ms": 5957.166540999999,
+    "prompt_tokens": 848,
+    "new_tokens": 56
+   }
+  },
+  {
+   "case": "otel-growth-unproven.jsonl",
+   "status": "no_model_opinion",
+   "reason": "every label was invalid",
+   "labels": [],
+   "dropped": [
+    "missing quote"
+   ],
+   "raw": "The mode is:\n\n{\"mode\": \"FM-1.5\", \"step\": 6, \"quote\": \"tool.2.3\", \"path\": \"/src/cart.js\", \"source\": \"The assistant tool did not correctly handle the cart, leading to a failure in the overall process.\"}\n\nThe result is:\n\n[\n  {\n    \"mode\": \"FM-1.5\",\n    \"step\": 6,\n    \"source\": \"The assistant tool did not correctly handle the cart, leading to a failure in the overall process.\"\n  }\n]\n\n```",
+   "timing": {
+    "first_token_ms": 4196.917417000004,
+    "total_ms": 8544.347334000006,
+    "prompt_tokens": 894,
+    "new_tokens": 116
+   }
+  },
+  {
+   "case": "otel-retry-storm.json",
+   "status": "no_model_opinion",
+   "reason": "every label was invalid",
+   "labels": [],
+   "dropped": [
+    "quote not found in that step"
+   ],
+   "raw": "```json\n{\n  \"mode\": \"FM-2.5\",\n  \"step\": 12,\n  \"quote\": \"The agent is relying on a cached value without verifying the current state of the database.\"\n}\n```\n```json\n{\n  \"mode\": \"mode\",\n  \"shape\": \"array\",\n  \"type\": \"json\",\n  \"content\": \"[\n    {\\\"mode\\\": \\\"ERROR\\\", \\\"step\\\": 2, \\\"tool\\\": \\\"DB\\\", \\\"message\\\": \\\"The database call timed out\\\", \\\"action\\\": \\\"ignore\\\"},\n    {\\\"mode\\\": \\\"ERROR\\\", \\\"step\\\": 2, \\\"tool\\\": \\\"DB\\\", \\\"message\\\": \\\"The database call timed out\\\", \\\"action\\\": \\\"ignore\\\"},\n    {\\\"mode\\\": \\\"ERROR\\\",",
+   "timing": {
+    "first_token_ms": 4673.3682499999995,
+    "total_ms": 11720.496499999994,
+    "prompt_tokens": 987,
+    "new_tokens": 160
+   }
+  },
+  {
+   "case": "otel-tool-loop.json",
+   "status": "no_model_opinion",
+   "reason": "every label was invalid",
+   "labels": [],
+   "dropped": [
+    "step not in trace"
+   ],
+   "raw": "```json\n{\n    \"mode\": \"FM-2.5\",\n    \"quote\": \"No incidents are listed on the vendor's page right now.\",\n    \"step\": 15,\n    \"trace\": [\n        \"trace: 1\",\n        \"trace: 2\",\n        \"trace: 3\",\n        \"trace: 4\",\n        \"trace: 5\",\n        \"trace: 6\",\n        \"trace: 7\",\n        \"trace: 8\",\n        \"trace: 9\",\n        \"trace: 10\",\n        \"trace: 11\",\n        \"trace: 12\",\n        \"trace: 13\",\n        \"trace: 14\",\n        \"trace: 15\"\n    ]\n}\n```",
+   "timing": {
+    "first_token_ms": 4796.041292000009,
+    "total_ms": 11237.064459000001,
+    "prompt_tokens": 991,
+    "new_tokens": 154
+   }
+  }
+ ]
+}

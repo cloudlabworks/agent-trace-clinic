@@ -1,0 +1,10 @@
+{
+  "name": "agent-trace-clinic-bakeoff",
+  "private": true,
+  "type": "module",
+  "description": "Dev-only: runs candidate in-browser models over cases/ in Node. Not needed by the Clinic itself.",
+  "license": "MIT",
+  "devDependencies": {
+    "@huggingface/transformers": "4.3.1"
+  }
+}
