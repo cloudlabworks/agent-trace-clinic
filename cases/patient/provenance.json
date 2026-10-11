@@ -1,0 +1,9 @@
+{
+ "generator": "agent-trace-clinic-patient",
+ "patient_commit": "b645f62",
+ "command": "PYTHONPATH=src python3 -m patient.local --out DIR --night 2026-10-10 --matrix",
+ "night": "2026-10-10",
+ "seed": "patient-v1",
+ "model": "stub-model (deterministic; token counts are its characters/4 estimates)",
+ "traces": 18
+}

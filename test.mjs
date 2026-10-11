@@ -22,6 +22,7 @@ import {
   RULES,
 } from './detectors.js';
 import { usage } from './usage.js';
+import { deriveExpected } from './scripts/patient-expected.mjs';
 import { MAST_MODES, buildMessages, parseLabels, toFindings, loadLabeller, stepLine } from './labeller.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -90,6 +91,52 @@ for (const file of files) {
   for (const f of got) {
     check(`case ${file} ${f.id} has explain`, typeof f.explain === 'string' && f.explain.length > 20);
     check(`case ${file} ${f.id} evidence is short`, f.evidence.length <= 80, f.evidence);
+  }
+}
+
+// ------------------------------------------------------------------ patient cases
+// cases/patient/: traces from the patient (a fault-injected agent), with its
+// ground truth. Expected findings are derived from the ground truth alone
+// (scripts/patient-expected.mjs); expected.json must equal that derivation.
+// Compared: the primary finding's id and steps (ground truth has no severity),
+// no other non-info finding except the ground truth's allowed_extra, and
+// token_totals over the recorded number of model calls.
+
+const patientDir = join(casesDir, 'patient');
+const patientExpected = JSON.parse(readFileSync(join(patientDir, 'expected.json'), 'utf8'));
+const patientFiles = readdirSync(join(patientDir, 'traces')).filter((f) => f.endsWith('.json')).sort();
+const truthFiles = readdirSync(join(patientDir, 'ground-truth')).filter((f) => f.endsWith('.json')).sort();
+check('patient: one ground-truth record per trace', JSON.stringify(truthFiles.map((f) => f.replace(/\.json$/, '.otel.json'))) === JSON.stringify(patientFiles));
+check('patient: expected.json lists exactly the traces', JSON.stringify(Object.keys(patientExpected).filter((k) => !k.startsWith('_')).sort()) === JSON.stringify(patientFiles));
+const patientRows = [];
+let patientCount = 0;
+for (const file of patientFiles) {
+  patientCount++;
+  const truth = JSON.parse(readFileSync(join(patientDir, 'ground-truth', file.replace(/\.otel\.json$/, '.json')), 'utf8'));
+  const exp = deriveExpected(truth);
+  check(`patient ${file}: expected.json equals the ground-truth derivation`, JSON.stringify(patientExpected[file]) === JSON.stringify(exp));
+  const r = normalise(readFileSync(join(patientDir, 'traces', file), 'utf8'));
+  const got = runDetectors(r.steps, { instructions: r.instructions });
+  const problems = [];
+  const prim = exp.primary ? got.filter((f) => f.id === exp.primary.id) : [];
+  if (exp.primary) {
+    if (prim.length !== 1) problems.push(`${prim.length} ${exp.primary.id} findings`);
+    else if (prim[0].steps.join() !== exp.primary.steps.join()) problems.push(`${exp.primary.id} at [${prim[0].steps}], truth [${exp.primary.steps}]`);
+  }
+  const extra = got.filter((f) => f.severity !== 'info' && f.id !== exp.primary?.id);
+  for (const f of extra) if (!exp.allowed_extra.includes(f.id)) problems.push(`unexpected ${f.id} [${f.steps}]`);
+  const tt = got.find((f) => f.id === 'token_totals');
+  if (!tt || tt.data.model_calls !== exp.model_calls) problems.push(`token_totals over ${tt?.data.model_calls} calls, truth ${exp.model_calls}`);
+  check(`patient ${file}: agrees with ground truth`, problems.length === 0, problems.join('; '));
+  patientRows.push({ file, exp, got: got.filter((f) => f.severity !== 'info'), extra, problems });
+}
+if (process.argv.includes('--patient-table')) {
+  console.log('| Fault | Task | Ground truth | Clinic | Co-findings | Agrees |');
+  console.log('| --- | --- | --- | --- | --- | --- |');
+  for (const row of patientRows) {
+    const p = row.exp.primary;
+    const prim = p ? row.got.find((f) => f.id === p.id) : null;
+    console.log(`| ${row.exp.fault} | ${row.exp.task} | ${p ? `${p.id} [${p.steps.join(', ')}]` : 'none'} | ${prim ? `${prim.id} [${prim.steps.join(', ')}]` : p ? 'missed' : 'none'} | ${row.extra.map((f) => `${f.id} [${f.steps.join(', ')}]`).join('; ') || '-'} | ${row.problems.length ? `no: ${row.problems.join('; ')}` : 'yes'} |`);
   }
 }
 
@@ -354,5 +401,5 @@ check('unproven: user text is never a claim', detectUnprovenCompletion([S(0, 'me
 // ------------------------------------------------------------------ report
 
 for (const f of failures) console.log(`FAIL ${f}`);
-console.log(`${caseCount} cases, ${pass + fail} checks: ${pass} passed, ${fail} failed`);
+console.log(`${caseCount} cases, ${patientCount} patient traces, ${pass + fail} checks: ${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

@@ -1,0 +1,31 @@
+{
+ "schema": "patient-ground-truth/1",
+ "night": "2026-10-10",
+ "task_id": "stale-close",
+ "model_id": "stub-model",
+ "seed": "patient-v1",
+ "trace_key": "traces/2026-10-10/stale-close.otel.json",
+ "outcome": "answered",
+ "model_calls": 8,
+ "step_numbering": "agent-trace-clinic normalised steps (0-based)",
+ "fault": "retry_storm",
+ "description": "The ticket service returns an error for the first few update calls; the harness has no backoff and no retry cap.",
+ "steps": [
+  8,
+  11,
+  14
+ ],
+ "notes": [],
+ "expected_clinic": {
+  "primary": "retry_storm",
+  "steps": [
+   8,
+   11,
+   14
+  ],
+  "allowed_extra": [
+   "tool_loop",
+   "unhandled_tool_error"
+  ]
+ }
+}

@@ -1,0 +1,645 @@
+{
+ "resourceSpans": [
+  {
+   "resource": {
+    "attributes": [
+     {
+      "key": "service.name",
+      "value": {
+       "stringValue": "agent-trace-clinic-patient"
+      }
+     }
+    ]
+   },
+   "scopeSpans": [
+    {
+     "scope": {
+      "name": "agent-trace-clinic-patient",
+      "version": "0.1.0"
+     },
+     "spans": [
+      {
+       "traceId": "dc9756d3b52073d8f8ebf4edd3a91404",
+       "spanId": "7e8073c44a45efa7",
+       "name": "invoke_agent patient",
+       "kind": 1,
+       "startTimeUnixNano": "1791601200000000000",
+       "endTimeUnixNano": "1791601200019000000",
+       "attributes": [
+        {
+         "key": "gen_ai.operation.name",
+         "value": {
+          "stringValue": "invoke_agent"
+         }
+        },
+        {
+         "key": "gen_ai.agent.name",
+         "value": {
+          "stringValue": "patient"
+         }
+        },
+        {
+         "key": "gen_ai.provider.name",
+         "value": {
+          "stringValue": "aws.bedrock"
+         }
+        },
+        {
+         "key": "gen_ai.request.model",
+         "value": {
+          "stringValue": "stub-model"
+         }
+        },
+        {
+         "key": "patient.task.id",
+         "value": {
+          "stringValue": "stale-close"
+         }
+        },
+        {
+         "key": "patient.outcome",
+         "value": {
+          "stringValue": "answered"
+         }
+        }
+       ],
+       "status": {
+        "code": 0
+       }
+      },
+      {
+       "traceId": "dc9756d3b52073d8f8ebf4edd3a91404",
+       "spanId": "fbee9d9a19405d30",
+       "parentSpanId": "7e8073c44a45efa7",
+       "name": "chat stub-model",
+       "kind": 3,
+       "startTimeUnixNano": "1791601200001000000",
+       "endTimeUnixNano": "1791601200002000000",
+       "attributes": [
+        {
+         "key": "gen_ai.operation.name",
+         "value": {
+          "stringValue": "chat"
+         }
+        },
+        {
+         "key": "gen_ai.provider.name",
+         "value": {
+          "stringValue": "aws.bedrock"
+         }
+        },
+        {
+         "key": "gen_ai.request.model",
+         "value": {
+          "stringValue": "stub-model"
+         }
+        },
+        {
+         "key": "gen_ai.request.max_tokens",
+         "value": {
+          "intValue": "1024"
+         }
+        },
+        {
+         "key": "gen_ai.response.finish_reasons",
+         "value": {
+          "arrayValue": {
+           "values": [
+            {
+             "stringValue": "tool_call"
+            }
+           ]
+          }
+         }
+        },
+        {
+         "key": "gen_ai.system_instructions",
+         "value": {
+          "stringValue": "[{\"type\": \"text\", \"content\": \"You are a support agent working a ticket queue through tools.\\nUse get_ticket to read a ticket, search_docs to find the support guide, and update_ticket to change a ticket.\\nRead the ticket before you change it. Base every customer-facing comment on the support guide, and quote the guide's steps in plain words.\\nAlways add the label \\\"triaged\\\" to every ticket you update.\\nAfter you update a ticket, read it back with get_ticket and check the change is there before you answer.\\nYour final answer is one or two sentences that report what the read-back shows. Do not invent ticket data; if a tool fails, say so and say what you tried.\\nKeep comments short, polite and specific to the customer's question.\\n\\nSupport policy (applies to every ticket):\\n1. Statuses. new: nobody has looked yet. open: an agent is working on it. waiting-on-customer: we asked the customer something or told them what to do next. closed: nothing left to do, or the stale rule applies. Never reopen a closed ticket yourself; a customer reply reopens it.\\n2. Comments. Write to the customer, not about them. Start with the answer, then the steps. Use the product's own menu names. Do not promise dates, refunds or credits. Do not paste internal notes, tool output or error text into a customer comment.\\n3. Labels. Labels are lower case. Keep existing labels unless the guide says to remove one. Use stale only for tickets closed under the stale rule. Use ui, billing or account for the area of the product when it is clear from the ticket.\\n4. Accounts and privacy. Never ask for a password, a full card number or a security answer. Do not copy personal data from one ticket into another. If a ticket mentions a legal request, set it to open, add the label legal, and stop.\\n5. Tools. Call a tool only when you need its answer. Do not repeat an identical call unless something has changed. If a tool fails, read the error before you try again, and do not try the same thing more than twice.\\n6. Scope. Work only on the ticket named in the task. If the task cannot be finished with the tools you have, say what is missing in your final answer instead of guessing.\\n7. Tone. Plain words, short sentences, no jargon, no blame. Thank the customer once at most.\\n8. Escalation. Security reports, outages that affect many customers, and anything that needs an engineer go to the open status with the label escalate and a one-line internal summary.\\n\\nWorked example (for style only; it is not one of your tickets):\\nTicket T-0001 asks why a receipt shows the wrong company name. The guide says the name on receipts comes from Settings, then Company profile, and changes apply to new receipts only. A good update sets waiting-on-customer, adds the labels billing and triaged, and comments: \\\"The name on receipts comes from Settings, then Company profile. If you change it there, every new receipt uses the new name; receipts already sent keep the old one. Reply here if you need an older receipt reissued.\\\" A good final answer then says: \\\"Read-back of T-0001 shows status waiting-on-customer, labels billing and triaged, and the comment is on the ticket.\\\"\\nA poor update says only \\\"see the docs\\\", leaves the status unchanged, forgets the labels, or answers a different question from the one the customer asked. A poor final answer reports what the agent meant to do instead of what the read-back shows.\\n\\nGlossary: the notification service sends account emails; the suppression list holds addresses that bounced and receive no email until removed; Billing, then History lists invoices and receipts; the customer page shows a customer's account, tickets and email status.\"}]"
+         }
+        },
+        {
+         "key": "gen_ai.output.messages",
+         "value": {
+          "stringValue": "[{\"role\": \"assistant\", \"parts\": [{\"type\": \"tool_call\", \"id\": \"tooluse-1\", \"name\": \"get_ticket\", \"arguments\": {\"ticket_id\": \"T-1044\"}}], \"finish_reason\": \"tool_call\"}]"
+         }
+        },
+        {
+         "key": "gen_ai.usage.input_tokens",
+         "value": {
+          "intValue": "1220"
+         }
+        },
+        {
+         "key": "gen_ai.usage.output_tokens",
+         "value": {
+          "intValue": "25"
+         }
+        }
+       ],
+       "status": {
+        "code": 0
+       }
+      },
+      {
+       "traceId": "dc9756d3b52073d8f8ebf4edd3a91404",
+       "spanId": "5e7c2ef35a11311e",
+       "parentSpanId": "7e8073c44a45efa7",
+       "name": "execute_tool get_ticket",
+       "kind": 1,
+       "startTimeUnixNano": "1791601200003000000",
+       "endTimeUnixNano": "1791601200004000000",
+       "attributes": [
+        {
+         "key": "gen_ai.operation.name",
+         "value": {
+          "stringValue": "execute_tool"
+         }
+        },
+        {
+         "key": "gen_ai.tool.name",
+         "value": {
+          "stringValue": "get_ticket"
+         }
+        },
+        {
+         "key": "gen_ai.tool.call.id",
+         "value": {
+          "stringValue": "tooluse-1"
+         }
+        },
+        {
+         "key": "gen_ai.tool.type",
+         "value": {
+          "stringValue": "function"
+         }
+        },
+        {
+         "key": "gen_ai.tool.call.arguments",
+         "value": {
+          "stringValue": "{\"ticket_id\":\"T-1044\"}"
+         }
+        },
+        {
+         "key": "gen_ai.tool.call.result",
+         "value": {
+          "stringValue": "{\"body\": \"Asked the customer for the app version on 2026-08-01. No reply since.\", \"id\": \"T-1044\", \"labels\": [\"ui\"], \"status\": \"waiting-on-customer\", \"title\": \"Dark mode toggle missing on tablet\"}"
+         }
+        }
+       ],
+       "status": {
+        "code": 0
+       }
+      },
+      {
+       "traceId": "dc9756d3b52073d8f8ebf4edd3a91404",
+       "spanId": "b008074db1b21be7",
+       "parentSpanId": "7e8073c44a45efa7",
+       "name": "chat stub-model",
+       "kind": 3,
+       "startTimeUnixNano": "1791601200005000000",
+       "endTimeUnixNano": "1791601200006000000",
+       "attributes": [
+        {
+         "key": "gen_ai.operation.name",
+         "value": {
+          "stringValue": "chat"
+         }
+        },
+        {
+         "key": "gen_ai.provider.name",
+         "value": {
+          "stringValue": "aws.bedrock"
+         }
+        },
+        {
+         "key": "gen_ai.request.model",
+         "value": {
+          "stringValue": "stub-model"
+         }
+        },
+        {
+         "key": "gen_ai.request.max_tokens",
+         "value": {
+          "intValue": "1024"
+         }
+        },
+        {
+         "key": "gen_ai.response.finish_reasons",
+         "value": {
+          "arrayValue": {
+           "values": [
+            {
+             "stringValue": "tool_call"
+            }
+           ]
+          }
+         }
+        },
+        {
+         "key": "gen_ai.system_instructions",
+         "value": {
+          "stringValue": "[{\"type\": \"text\", \"content\": \"You are a support agent working a ticket queue through tools.\\nUse get_ticket to read a ticket, search_docs to find the support guide, and update_ticket to change a ticket.\\nRead the ticket before you change it. Base every customer-facing comment on the support guide, and quote the guide's steps in plain words.\\nAfter you update a ticket, read it back with get_ticket and check the change is there before you answer.\\nYour final answer is one or two sentences that report what the read-back shows. Do not invent ticket data; if a tool fails, say so and say what you tried.\\nKeep comments short, polite and specific to the customer's question.\\n\\nSupport policy (applies to every ticket):\\n1. Statuses. new: nobody has looked yet. open: an agent is working on it. waiting-on-customer: we asked the customer something or told them what to do next. closed: nothing left to do, or the stale rule applies. Never reopen a closed ticket yourself; a customer reply reopens it.\\n2. Comments. Write to the customer, not about them. Start with the answer, then the steps. Use the product's own menu names. Do not promise dates, refunds or credits. Do not paste internal notes, tool output or error text into a customer comment.\\n3. Labels. Labels are lower case. Keep existing labels unless the guide says to remove one. Use stale only for tickets closed under the stale rule. Use ui, billing or account for the area of the product when it is clear from the ticket.\\n4. Accounts and privacy. Never ask for a password, a full card number or a security answer. Do not copy personal data from one ticket into another. If a ticket mentions a legal request, set it to open, add the label legal, and stop.\\n5. Tools. Call a tool only when you need its answer. Do not repeat an identical call unless something has changed. If a tool fails, read the error before you try again, and do not try the same thing more than twice.\\n6. Scope. Work only on the ticket named in the task. If the task cannot be finished with the tools you have, say what is missing in your final answer instead of guessing.\\n7. Tone. Plain words, short sentences, no jargon, no blame. Thank the customer once at most.\\n8. Escalation. Security reports, outages that affect many customers, and anything that needs an engineer go to the open status with the label escalate and a one-line internal summary.\\n\\nWorked example (for style only; it is not one of your tickets):\\nTicket T-0001 asks why a receipt shows the wrong company name. The guide says the name on receipts comes from Settings, then Company profile, and changes apply to new receipts only. A good update sets waiting-on-customer, adds the labels billing and triaged, and comments: \\\"The name on receipts comes from Settings, then Company profile. If you change it there, every new receipt uses the new name; receipts already sent keep the old one. Reply here if you need an older receipt reissued.\\\" A good final answer then says: \\\"Read-back of T-0001 shows status waiting-on-customer, labels billing and triaged, and the comment is on the ticket.\\\"\\nA poor update says only \\\"see the docs\\\", leaves the status unchanged, forgets the labels, or answers a different question from the one the customer asked. A poor final answer reports what the agent meant to do instead of what the read-back shows.\\n\\nGlossary: the notification service sends account emails; the suppression list holds addresses that bounced and receive no email until removed; Billing, then History lists invoices and receipts; the customer page shows a customer's account, tickets and email status.\"}]"
+         }
+        },
+        {
+         "key": "gen_ai.output.messages",
+         "value": {
+          "stringValue": "[{\"role\": \"assistant\", \"parts\": [{\"type\": \"tool_call\", \"id\": \"tooluse-2\", \"name\": \"search_docs\", \"arguments\": {\"query\": \"closing stale tickets\"}}], \"finish_reason\": \"tool_call\"}]"
+         }
+        },
+        {
+         "key": "gen_ai.usage.input_tokens",
+         "value": {
+          "intValue": "1317"
+         }
+        },
+        {
+         "key": "gen_ai.usage.output_tokens",
+         "value": {
+          "intValue": "28"
+         }
+        }
+       ],
+       "status": {
+        "code": 0
+       }
+      },
+      {
+       "traceId": "dc9756d3b52073d8f8ebf4edd3a91404",
+       "spanId": "546643f34916075a",
+       "parentSpanId": "7e8073c44a45efa7",
+       "name": "execute_tool search_docs",
+       "kind": 1,
+       "startTimeUnixNano": "1791601200007000000",
+       "endTimeUnixNano": "1791601200008000000",
+       "attributes": [
+        {
+         "key": "gen_ai.operation.name",
+         "value": {
+          "stringValue": "execute_tool"
+         }
+        },
+        {
+         "key": "gen_ai.tool.name",
+         "value": {
+          "stringValue": "search_docs"
+         }
+        },
+        {
+         "key": "gen_ai.tool.call.id",
+         "value": {
+          "stringValue": "tooluse-2"
+         }
+        },
+        {
+         "key": "gen_ai.tool.type",
+         "value": {
+          "stringValue": "function"
+         }
+        },
+        {
+         "key": "gen_ai.tool.call.arguments",
+         "value": {
+          "stringValue": "{\"query\":\"closing stale tickets\"}"
+         }
+        },
+        {
+         "key": "gen_ai.tool.call.result",
+         "value": {
+          "stringValue": "Article: support guide (stale)\nA ticket waiting on the customer for more than thirty days may be closed as stale.\nBefore closing, add a comment that says why and how the customer can reopen it.\nClosing as stale uses status closed and the label stale.\nA customer reply to a closed ticket reopens it automatically.\nThis section repeats the general guidance that applies to every support article: be pol [trimmed]"
+         }
+        }
+       ],
+       "status": {
+        "code": 0
+       }
+      },
+      {
+       "traceId": "dc9756d3b52073d8f8ebf4edd3a91404",
+       "spanId": "8949341967542991",
+       "parentSpanId": "7e8073c44a45efa7",
+       "name": "chat stub-model",
+       "kind": 3,
+       "startTimeUnixNano": "1791601200009000000",
+       "endTimeUnixNano": "1791601200010000000",
+       "attributes": [
+        {
+         "key": "gen_ai.operation.name",
+         "value": {
+          "stringValue": "chat"
+         }
+        },
+        {
+         "key": "gen_ai.provider.name",
+         "value": {
+          "stringValue": "aws.bedrock"
+         }
+        },
+        {
+         "key": "gen_ai.request.model",
+         "value": {
+          "stringValue": "stub-model"
+         }
+        },
+        {
+         "key": "gen_ai.request.max_tokens",
+         "value": {
+          "intValue": "1024"
+         }
+        },
+        {
+         "key": "gen_ai.response.finish_reasons",
+         "value": {
+          "arrayValue": {
+           "values": [
+            {
+             "stringValue": "tool_call"
+            }
+           ]
+          }
+         }
+        },
+        {
+         "key": "gen_ai.system_instructions",
+         "value": {
+          "stringValue": "[{\"type\": \"text\", \"content\": \"You are a support agent working a ticket queue through tools.\\nUse get_ticket to read a ticket, search_docs to find the support guide, and update_ticket to change a ticket.\\nRead the ticket before you change it. Base every customer-facing comment on the support guide, and quote the guide's steps in plain words.\\nAfter you update a ticket, read it back with get_ticket and check the change is there before you answer.\\nYour final answer is one or two sentences that report what the read-back shows. Do not invent ticket data; if a tool fails, say so and say what you tried.\\nKeep comments short, polite and specific to the customer's question.\\n\\nSupport policy (applies to every ticket):\\n1. Statuses. new: nobody has looked yet. open: an agent is working on it. waiting-on-customer: we asked the customer something or told them what to do next. closed: nothing left to do, or the stale rule applies. Never reopen a closed ticket yourself; a customer reply reopens it.\\n2. Comments. Write to the customer, not about them. Start with the answer, then the steps. Use the product's own menu names. Do not promise dates, refunds or credits. Do not paste internal notes, tool output or error text into a customer comment.\\n3. Labels. Labels are lower case. Keep existing labels unless the guide says to remove one. Use stale only for tickets closed under the stale rule. Use ui, billing or account for the area of the product when it is clear from the ticket.\\n4. Accounts and privacy. Never ask for a password, a full card number or a security answer. Do not copy personal data from one ticket into another. If a ticket mentions a legal request, set it to open, add the label legal, and stop.\\n5. Tools. Call a tool only when you need its answer. Do not repeat an identical call unless something has changed. If a tool fails, read the error before you try again, and do not try the same thing more than twice.\\n6. Scope. Work only on the ticket named in the task. If the task cannot be finished with the tools you have, say what is missing in your final answer instead of guessing.\\n7. Tone. Plain words, short sentences, no jargon, no blame. Thank the customer once at most.\\n8. Escalation. Security reports, outages that affect many customers, and anything that needs an engineer go to the open status with the label escalate and a one-line internal summary.\\n\\nWorked example (for style only; it is not one of your tickets):\\nTicket T-0001 asks why a receipt shows the wrong company name. The guide says the name on receipts comes from Settings, then Company profile, and changes apply to new receipts only. A good update sets waiting-on-customer, adds the labels billing and triaged, and comments: \\\"The name on receipts comes from Settings, then Company profile. If you change it there, every new receipt uses the new name; receipts already sent keep the old one. Reply here if you need an older receipt reissued.\\\" A good final answer then says: \\\"Read-back of T-0001 shows status waiting-on-customer, labels billing and triaged, and the comment is on the ticket.\\\"\\nA poor update says only \\\"see the docs\\\", leaves the status unchanged, forgets the labels, or answers a different question from the one the customer asked. A poor final answer reports what the agent meant to do instead of what the read-back shows.\\n\\nGlossary: the notification service sends account emails; the suppression list holds addresses that bounced and receive no email until removed; Billing, then History lists invoices and receipts; the customer page shows a customer's account, tickets and email status.\"}]"
+         }
+        },
+        {
+         "key": "gen_ai.output.messages",
+         "value": {
+          "stringValue": "[{\"role\": \"assistant\", \"parts\": [{\"type\": \"tool_call\", \"id\": \"tooluse-3\", \"name\": \"update_ticket\", \"arguments\": {\"ticket_id\": \"T-1044\", \"status\": \"closed\", \"comment\": \"Closing as stale: no reply for more than thirty days. Reply to this ticket to reopen it.\", \"labels\": [\"stale\"]}}], \"finish_reason\": \"tool_call\"}]"
+         }
+        },
+        {
+         "key": "gen_ai.usage.input_tokens",
+         "value": {
+          "intValue": "1482"
+         }
+        },
+        {
+         "key": "gen_ai.usage.output_tokens",
+         "value": {
+          "intValue": "61"
+         }
+        }
+       ],
+       "status": {
+        "code": 0
+       }
+      },
+      {
+       "traceId": "dc9756d3b52073d8f8ebf4edd3a91404",
+       "spanId": "c178bcec5529d26d",
+       "parentSpanId": "7e8073c44a45efa7",
+       "name": "execute_tool update_ticket",
+       "kind": 1,
+       "startTimeUnixNano": "1791601200011000000",
+       "endTimeUnixNano": "1791601200012000000",
+       "attributes": [
+        {
+         "key": "gen_ai.operation.name",
+         "value": {
+          "stringValue": "execute_tool"
+         }
+        },
+        {
+         "key": "gen_ai.tool.name",
+         "value": {
+          "stringValue": "update_ticket"
+         }
+        },
+        {
+         "key": "gen_ai.tool.call.id",
+         "value": {
+          "stringValue": "tooluse-3"
+         }
+        },
+        {
+         "key": "gen_ai.tool.type",
+         "value": {
+          "stringValue": "function"
+         }
+        },
+        {
+         "key": "gen_ai.tool.call.arguments",
+         "value": {
+          "stringValue": "{\"comment\":\"Closing as stale: no reply for more than thirty days. Reply to this ticket to reopen it.\",\"labels\":[\"stale\"],\"status\":\"closed\",\"ticket_id\":\"T-1044\"}"
+         }
+        },
+        {
+         "key": "gen_ai.tool.call.result",
+         "value": {
+          "stringValue": "ok: ticket updated"
+         }
+        }
+       ],
+       "status": {
+        "code": 0
+       }
+      },
+      {
+       "traceId": "dc9756d3b52073d8f8ebf4edd3a91404",
+       "spanId": "87c777bc128ebb9f",
+       "parentSpanId": "7e8073c44a45efa7",
+       "name": "chat stub-model",
+       "kind": 3,
+       "startTimeUnixNano": "1791601200013000000",
+       "endTimeUnixNano": "1791601200014000000",
+       "attributes": [
+        {
+         "key": "gen_ai.operation.name",
+         "value": {
+          "stringValue": "chat"
+         }
+        },
+        {
+         "key": "gen_ai.provider.name",
+         "value": {
+          "stringValue": "aws.bedrock"
+         }
+        },
+        {
+         "key": "gen_ai.request.model",
+         "value": {
+          "stringValue": "stub-model"
+         }
+        },
+        {
+         "key": "gen_ai.request.max_tokens",
+         "value": {
+          "intValue": "1024"
+         }
+        },
+        {
+         "key": "gen_ai.response.finish_reasons",
+         "value": {
+          "arrayValue": {
+           "values": [
+            {
+             "stringValue": "tool_call"
+            }
+           ]
+          }
+         }
+        },
+        {
+         "key": "gen_ai.system_instructions",
+         "value": {
+          "stringValue": "[{\"type\": \"text\", \"content\": \"You are a support agent working a ticket queue through tools.\\nUse get_ticket to read a ticket, search_docs to find the support guide, and update_ticket to change a ticket.\\nRead the ticket before you change it. Base every customer-facing comment on the support guide, and quote the guide's steps in plain words.\\nAfter you update a ticket, read it back with get_ticket and check the change is there before you answer.\\nYour final answer is one or two sentences that report what the read-back shows. Do not invent ticket data; if a tool fails, say so and say what you tried.\\nKeep comments short, polite and specific to the customer's question.\\n\\nSupport policy (applies to every ticket):\\n1. Statuses. new: nobody has looked yet. open: an agent is working on it. waiting-on-customer: we asked the customer something or told them what to do next. closed: nothing left to do, or the stale rule applies. Never reopen a closed ticket yourself; a customer reply reopens it.\\n2. Comments. Write to the customer, not about them. Start with the answer, then the steps. Use the product's own menu names. Do not promise dates, refunds or credits. Do not paste internal notes, tool output or error text into a customer comment.\\n3. Labels. Labels are lower case. Keep existing labels unless the guide says to remove one. Use stale only for tickets closed under the stale rule. Use ui, billing or account for the area of the product when it is clear from the ticket.\\n4. Accounts and privacy. Never ask for a password, a full card number or a security answer. Do not copy personal data from one ticket into another. If a ticket mentions a legal request, set it to open, add the label legal, and stop.\\n5. Tools. Call a tool only when you need its answer. Do not repeat an identical call unless something has changed. If a tool fails, read the error before you try again, and do not try the same thing more than twice.\\n6. Scope. Work only on the ticket named in the task. If the task cannot be finished with the tools you have, say what is missing in your final answer instead of guessing.\\n7. Tone. Plain words, short sentences, no jargon, no blame. Thank the customer once at most.\\n8. Escalation. Security reports, outages that affect many customers, and anything that needs an engineer go to the open status with the label escalate and a one-line internal summary.\\n\\nWorked example (for style only; it is not one of your tickets):\\nTicket T-0001 asks why a receipt shows the wrong company name. The guide says the name on receipts comes from Settings, then Company profile, and changes apply to new receipts only. A good update sets waiting-on-customer, adds the labels billing and triaged, and comments: \\\"The name on receipts comes from Settings, then Company profile. If you change it there, every new receipt uses the new name; receipts already sent keep the old one. Reply here if you need an older receipt reissued.\\\" A good final answer then says: \\\"Read-back of T-0001 shows status waiting-on-customer, labels billing and triaged, and the comment is on the ticket.\\\"\\nA poor update says only \\\"see the docs\\\", leaves the status unchanged, forgets the labels, or answers a different question from the one the customer asked. A poor final answer reports what the agent meant to do instead of what the read-back shows.\\n\\nGlossary: the notification service sends account emails; the suppression list holds addresses that bounced and receive no email until removed; Billing, then History lists invoices and receipts; the customer page shows a customer's account, tickets and email status.\"}]"
+         }
+        },
+        {
+         "key": "gen_ai.output.messages",
+         "value": {
+          "stringValue": "[{\"role\": \"assistant\", \"parts\": [{\"type\": \"tool_call\", \"id\": \"tooluse-4\", \"name\": \"get_ticket\", \"arguments\": {\"ticket_id\": \"T-1044\"}}], \"finish_reason\": \"tool_call\"}]"
+         }
+        },
+        {
+         "key": "gen_ai.usage.input_tokens",
+         "value": {
+          "intValue": "1580"
+         }
+        },
+        {
+         "key": "gen_ai.usage.output_tokens",
+         "value": {
+          "intValue": "25"
+         }
+        }
+       ],
+       "status": {
+        "code": 0
+       }
+      },
+      {
+       "traceId": "dc9756d3b52073d8f8ebf4edd3a91404",
+       "spanId": "3cae73dde0c976c6",
+       "parentSpanId": "7e8073c44a45efa7",
+       "name": "execute_tool get_ticket",
+       "kind": 1,
+       "startTimeUnixNano": "1791601200015000000",
+       "endTimeUnixNano": "1791601200016000000",
+       "attributes": [
+        {
+         "key": "gen_ai.operation.name",
+         "value": {
+          "stringValue": "execute_tool"
+         }
+        },
+        {
+         "key": "gen_ai.tool.name",
+         "value": {
+          "stringValue": "get_ticket"
+         }
+        },
+        {
+         "key": "gen_ai.tool.call.id",
+         "value": {
+          "stringValue": "tooluse-4"
+         }
+        },
+        {
+         "key": "gen_ai.tool.type",
+         "value": {
+          "stringValue": "function"
+         }
+        },
+        {
+         "key": "gen_ai.tool.call.arguments",
+         "value": {
+          "stringValue": "{\"ticket_id\":\"T-1044\"}"
+         }
+        },
+        {
+         "key": "gen_ai.tool.call.result",
+         "value": {
+          "stringValue": "{\"body\": \"Asked the customer for the app version on 2026-08-01. No reply since.\", \"comments\": [\"Closing as stale: no reply for more than thirty days. Reply to this ticket to reopen it.\"], \"id\": \"T-1044\", \"labels\": [\"stale\", \"ui\"], \"status\": \"closed\", \"title\": \"Dark mode toggle missing on tablet\"}"
+         }
+        }
+       ],
+       "status": {
+        "code": 0
+       }
+      },
+      {
+       "traceId": "dc9756d3b52073d8f8ebf4edd3a91404",
+       "spanId": "6efc63ac74c28864",
+       "parentSpanId": "7e8073c44a45efa7",
+       "name": "chat stub-model",
+       "kind": 3,
+       "startTimeUnixNano": "1791601200017000000",
+       "endTimeUnixNano": "1791601200018000000",
+       "attributes": [
+        {
+         "key": "gen_ai.operation.name",
+         "value": {
+          "stringValue": "chat"
+         }
+        },
+        {
+         "key": "gen_ai.provider.name",
+         "value": {
+          "stringValue": "aws.bedrock"
+         }
+        },
+        {
+         "key": "gen_ai.request.model",
+         "value": {
+          "stringValue": "stub-model"
+         }
+        },
+        {
+         "key": "gen_ai.request.max_tokens",
+         "value": {
+          "intValue": "1024"
+         }
+        },
+        {
+         "key": "gen_ai.response.finish_reasons",
+         "value": {
+          "arrayValue": {
+           "values": [
+            {
+             "stringValue": "stop"
+            }
+           ]
+          }
+         }
+        },
+        {
+         "key": "gen_ai.system_instructions",
+         "value": {
+          "stringValue": "[{\"type\": \"text\", \"content\": \"You are a support agent working a ticket queue through tools.\\nUse get_ticket to read a ticket, search_docs to find the support guide, and update_ticket to change a ticket.\\nRead the ticket before you change it. Base every customer-facing comment on the support guide, and quote the guide's steps in plain words.\\nAfter you update a ticket, read it back with get_ticket and check the change is there before you answer.\\nYour final answer is one or two sentences that report what the read-back shows. Do not invent ticket data; if a tool fails, say so and say what you tried.\\nKeep comments short, polite and specific to the customer's question.\\n\\nSupport policy (applies to every ticket):\\n1. Statuses. new: nobody has looked yet. open: an agent is working on it. waiting-on-customer: we asked the customer something or told them what to do next. closed: nothing left to do, or the stale rule applies. Never reopen a closed ticket yourself; a customer reply reopens it.\\n2. Comments. Write to the customer, not about them. Start with the answer, then the steps. Use the product's own menu names. Do not promise dates, refunds or credits. Do not paste internal notes, tool output or error text into a customer comment.\\n3. Labels. Labels are lower case. Keep existing labels unless the guide says to remove one. Use stale only for tickets closed under the stale rule. Use ui, billing or account for the area of the product when it is clear from the ticket.\\n4. Accounts and privacy. Never ask for a password, a full card number or a security answer. Do not copy personal data from one ticket into another. If a ticket mentions a legal request, set it to open, add the label legal, and stop.\\n5. Tools. Call a tool only when you need its answer. Do not repeat an identical call unless something has changed. If a tool fails, read the error before you try again, and do not try the same thing more than twice.\\n6. Scope. Work only on the ticket named in the task. If the task cannot be finished with the tools you have, say what is missing in your final answer instead of guessing.\\n7. Tone. Plain words, short sentences, no jargon, no blame. Thank the customer once at most.\\n8. Escalation. Security reports, outages that affect many customers, and anything that needs an engineer go to the open status with the label escalate and a one-line internal summary.\\n\\nWorked example (for style only; it is not one of your tickets):\\nTicket T-0001 asks why a receipt shows the wrong company name. The guide says the name on receipts comes from Settings, then Company profile, and changes apply to new receipts only. A good update sets waiting-on-customer, adds the labels billing and triaged, and comments: \\\"The name on receipts comes from Settings, then Company profile. If you change it there, every new receipt uses the new name; receipts already sent keep the old one. Reply here if you need an older receipt reissued.\\\" A good final answer then says: \\\"Read-back of T-0001 shows status waiting-on-customer, labels billing and triaged, and the comment is on the ticket.\\\"\\nA poor update says only \\\"see the docs\\\", leaves the status unchanged, forgets the labels, or answers a different question from the one the customer asked. A poor final answer reports what the agent meant to do instead of what the read-back shows.\\n\\nGlossary: the notification service sends account emails; the suppression list holds addresses that bounced and receive no email until removed; Billing, then History lists invoices and receipts; the customer page shows a customer's account, tickets and email status.\"}]"
+         }
+        },
+        {
+         "key": "gen_ai.output.messages",
+         "value": {
+          "stringValue": "[{\"role\": \"assistant\", \"parts\": [{\"type\": \"text\", \"content\": \"Read-back of T-1044 shows status closed and labels: stale, ui. The comment for the customer is on the ticket.\"}], \"finish_reason\": \"stop\"}]"
+         }
+        },
+        {
+         "key": "gen_ai.usage.input_tokens",
+         "value": {
+          "intValue": "1719"
+         }
+        },
+        {
+         "key": "gen_ai.usage.output_tokens",
+         "value": {
+          "intValue": "31"
+         }
+        }
+       ],
+       "status": {
+        "code": 0
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

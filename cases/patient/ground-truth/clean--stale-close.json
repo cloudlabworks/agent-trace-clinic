@@ -1,0 +1,20 @@
+{
+ "schema": "patient-ground-truth/1",
+ "night": "2026-10-10",
+ "task_id": "stale-close",
+ "model_id": "stub-model",
+ "seed": "patient-v1",
+ "trace_key": "traces/2026-10-10/stale-close.otel.json",
+ "outcome": "answered",
+ "model_calls": 5,
+ "step_numbering": "agent-trace-clinic normalised steps (0-based)",
+ "fault": "clean",
+ "description": "No fault: the control.",
+ "steps": [],
+ "notes": [],
+ "expected_clinic": {
+  "primary": null,
+  "steps": [],
+  "allowed_extra": []
+ }
+}

@@ -1,0 +1,259 @@
+{
+ "_about": "Derived from the patient ground-truth records in ground-truth/ by scripts/patient-expected.mjs, never from detector output. primary is the finding the fault must produce, with exactly these steps. allowed_extra are findings the patient says the fault also causes. Ground truth has no severity, so severity is not compared. token_totals must count model_calls model calls.",
+ "clean--docs-answer.otel.json": {
+  "fault": "clean",
+  "task": "docs-answer",
+  "primary": null,
+  "steps_from": "none expected",
+  "allowed_extra": [],
+  "model_calls": 6
+ },
+ "clean--stale-close.otel.json": {
+  "fault": "clean",
+  "task": "stale-close",
+  "primary": null,
+  "steps_from": "none expected",
+  "allowed_extra": [],
+  "model_calls": 5
+ },
+ "clean--ticket-triage.otel.json": {
+  "fault": "clean",
+  "task": "ticket-triage",
+  "primary": null,
+  "steps_from": "none expected",
+  "allowed_extra": [],
+  "model_calls": 5
+ },
+ "context_growth--docs-answer.otel.json": {
+  "fault": "context_growth",
+  "task": "docs-answer",
+  "primary": {
+   "id": "context_growth",
+   "steps": [
+    0,
+    3,
+    6,
+    9,
+    12,
+    15
+   ]
+  },
+  "steps_from": "expected_clinic.steps",
+  "allowed_extra": [],
+  "model_calls": 6
+ },
+ "context_growth--stale-close.otel.json": {
+  "fault": "context_growth",
+  "task": "stale-close",
+  "primary": {
+   "id": "context_growth",
+   "steps": [
+    0,
+    3,
+    6,
+    9,
+    12
+   ]
+  },
+  "steps_from": "expected_clinic.steps",
+  "allowed_extra": [],
+  "model_calls": 5
+ },
+ "context_growth--ticket-triage.otel.json": {
+  "fault": "context_growth",
+  "task": "ticket-triage",
+  "primary": {
+   "id": "context_growth",
+   "steps": [
+    0,
+    3,
+    6,
+    9,
+    12
+   ]
+  },
+  "steps_from": "expected_clinic.steps",
+  "allowed_extra": [],
+  "model_calls": 5
+ },
+ "forgotten_instruction--docs-answer.otel.json": {
+  "fault": "forgotten_instruction",
+  "task": "docs-answer",
+  "primary": {
+   "id": "forgotten_instruction",
+   "steps": [
+    10
+   ]
+  },
+  "steps_from": "notes",
+  "allowed_extra": [],
+  "model_calls": 6
+ },
+ "forgotten_instruction--stale-close.otel.json": {
+  "fault": "forgotten_instruction",
+  "task": "stale-close",
+  "primary": {
+   "id": "forgotten_instruction",
+   "steps": [
+    7
+   ]
+  },
+  "steps_from": "notes",
+  "allowed_extra": [],
+  "model_calls": 5
+ },
+ "forgotten_instruction--ticket-triage.otel.json": {
+  "fault": "forgotten_instruction",
+  "task": "ticket-triage",
+  "primary": {
+   "id": "forgotten_instruction",
+   "steps": [
+    7
+   ]
+  },
+  "steps_from": "notes",
+  "allowed_extra": [],
+  "model_calls": 5
+ },
+ "retry_storm--docs-answer.otel.json": {
+  "fault": "retry_storm",
+  "task": "docs-answer",
+  "primary": {
+   "id": "retry_storm",
+   "steps": [
+    11,
+    14,
+    17
+   ]
+  },
+  "steps_from": "expected_clinic.steps",
+  "allowed_extra": [
+   "tool_loop",
+   "unhandled_tool_error"
+  ],
+  "model_calls": 9
+ },
+ "retry_storm--stale-close.otel.json": {
+  "fault": "retry_storm",
+  "task": "stale-close",
+  "primary": {
+   "id": "retry_storm",
+   "steps": [
+    8,
+    11,
+    14
+   ]
+  },
+  "steps_from": "expected_clinic.steps",
+  "allowed_extra": [
+   "tool_loop",
+   "unhandled_tool_error"
+  ],
+  "model_calls": 8
+ },
+ "retry_storm--ticket-triage.otel.json": {
+  "fault": "retry_storm",
+  "task": "ticket-triage",
+  "primary": {
+   "id": "retry_storm",
+   "steps": [
+    8,
+    11,
+    14
+   ]
+  },
+  "steps_from": "expected_clinic.steps",
+  "allowed_extra": [
+   "tool_loop",
+   "unhandled_tool_error"
+  ],
+  "model_calls": 8
+ },
+ "tool_loop--docs-answer.otel.json": {
+  "fault": "tool_loop",
+  "task": "docs-answer",
+  "primary": {
+   "id": "tool_loop",
+   "steps": [
+    4,
+    7,
+    10,
+    13
+   ]
+  },
+  "steps_from": "expected_clinic.steps",
+  "allowed_extra": [],
+  "model_calls": 9
+ },
+ "tool_loop--stale-close.otel.json": {
+  "fault": "tool_loop",
+  "task": "stale-close",
+  "primary": {
+   "id": "tool_loop",
+   "steps": [
+    4,
+    7,
+    10,
+    13
+   ]
+  },
+  "steps_from": "expected_clinic.steps",
+  "allowed_extra": [],
+  "model_calls": 8
+ },
+ "tool_loop--ticket-triage.otel.json": {
+  "fault": "tool_loop",
+  "task": "ticket-triage",
+  "primary": {
+   "id": "tool_loop",
+   "steps": [
+    4,
+    7,
+    10,
+    13
+   ]
+  },
+  "steps_from": "expected_clinic.steps",
+  "allowed_extra": [],
+  "model_calls": 8
+ },
+ "unproven_done--docs-answer.otel.json": {
+  "fault": "unproven_done",
+  "task": "docs-answer",
+  "primary": {
+   "id": "unproven_completion",
+   "steps": [
+    12
+   ]
+  },
+  "steps_from": "expected_clinic.steps",
+  "allowed_extra": [],
+  "model_calls": 5
+ },
+ "unproven_done--stale-close.otel.json": {
+  "fault": "unproven_done",
+  "task": "stale-close",
+  "primary": {
+   "id": "unproven_completion",
+   "steps": [
+    9
+   ]
+  },
+  "steps_from": "expected_clinic.steps",
+  "allowed_extra": [],
+  "model_calls": 4
+ },
+ "unproven_done--ticket-triage.otel.json": {
+  "fault": "unproven_done",
+  "task": "ticket-triage",
+  "primary": {
+   "id": "unproven_completion",
+   "steps": [
+    9
+   ]
+  },
+  "steps_from": "expected_clinic.steps",
+  "allowed_extra": [],
+  "model_calls": 4
+ }
+}

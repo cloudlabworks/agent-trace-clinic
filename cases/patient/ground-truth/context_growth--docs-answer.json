@@ -1,0 +1,34 @@
+{
+ "schema": "patient-ground-truth/1",
+ "night": "2026-10-10",
+ "task_id": "docs-answer",
+ "model_id": "stub-model",
+ "seed": "patient-v1",
+ "trace_key": "traces/2026-10-10/docs-answer.otel.json",
+ "outcome": "answered",
+ "model_calls": 6,
+ "step_numbering": "agent-trace-clinic normalised steps (0-based)",
+ "fault": "context_growth",
+ "description": "The harness stops trimming tool output, so every full docs article stays in the context.",
+ "steps": [
+  0,
+  3,
+  6,
+  9,
+  12,
+  15
+ ],
+ "notes": [],
+ "expected_clinic": {
+  "primary": "context_growth",
+  "steps": [
+   0,
+   3,
+   6,
+   9,
+   12,
+   15
+  ],
+  "allowed_extra": []
+ }
+}

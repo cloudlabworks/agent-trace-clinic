@@ -1,0 +1,24 @@
+{
+ "schema": "patient-ground-truth/1",
+ "night": "2026-10-10",
+ "task_id": "stale-close",
+ "model_id": "stub-model",
+ "seed": "patient-v1",
+ "trace_key": "traces/2026-10-10/stale-close.otel.json",
+ "outcome": "answered",
+ "model_calls": 4,
+ "step_numbering": "agent-trace-clinic normalised steps (0-based)",
+ "fault": "unproven_done",
+ "description": "After the ticket update the harness tells the model time is up and asks for its final answer, so no read-back happens.",
+ "steps": [
+  9
+ ],
+ "notes": [],
+ "expected_clinic": {
+  "primary": "unproven_completion",
+  "steps": [
+   9
+  ],
+  "allowed_extra": []
+ }
+}
