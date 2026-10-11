@@ -15,6 +15,7 @@ import {
   detectUnhandledErrors,
   detectUnprovenCompletion,
   findClaim,
+  isCheckCall,
 } from './detectors.js';
 import { usage } from './usage.js';
 import { MAST_MODES, buildMessages, parseLabels, toFindings, loadLabeller, stepLine } from './labeller.js';
@@ -183,8 +184,36 @@ check('claim: future is not a claim', findClaim('I will get it done today.') ===
 check('claim: question is not a claim', findClaim('Is the deploy done?') === null);
 check('claim: second sentence found', findClaim('Looked at it. Deployed to staging.') === 'Deployed to staging.');
 check('claim: "pushed to main and deployed" is a claim', findClaim('Pushed to main and deployed.') === 'Pushed to main and deployed.');
-check('unproven: a later tool call clears the claim', detectUnprovenCompletion([S(0, 'message', { text: 'Done.' }), S(1, 'tool_call', { tool: 'check', args: '{}' })]).length === 0);
+check('unproven: a later check clears the claim', detectUnprovenCompletion([S(0, 'message', { text: 'Done.' }), S(1, 'tool_call', { tool: 'check', args: '{}' })]).length === 0);
 check('unproven: user text is never a claim', detectUnprovenCompletion([S(0, 'message', { role: 'user', text: 'Done.' })]).length === 0);
+{
+  const change = (i, extra = {}) => S(i, 'tool_call', { tool: 'update_config', args: '{}', ...extra });
+  const changeOk = (i) => S(i, 'tool_result', { tool: 'update_config', args: '{}', text: 'ok' });
+  const read = (i) => S(i, 'tool_call', { tool: 'get_config', args: '{}' });
+  const readRes = (i, error = false) => S(i, 'tool_result', { tool: 'get_config', args: '{}', error });
+  const done = (i) => S(i, 'message', { text: 'Done.' });
+  const flagged = (steps) => detectUnprovenCompletion(steps).map((f) => f.steps.join()).join('|');
+  check('unproven: change, check, claim is proven', flagged([change(0), changeOk(1), read(2), readRes(3), done(4)]) === '');
+  check('unproven: change, claim, check is proven', flagged([change(0), changeOk(1), done(2), read(3), readRes(4)]) === '');
+  check('unproven: change, claim and nothing else is flagged', flagged([change(0), changeOk(1), done(2)]) === '2');
+  check("unproven: the change's own ok result is not a receipt", flagged([read(0), readRes(1), change(2), changeOk(3), done(4)]) === '4');
+  check('unproven: a check before the last change does not count', flagged([change(0), changeOk(1), read(2), readRes(3), change(4), changeOk(5), done(6)]) === '6');
+  check('unproven: a later change is not a receipt', flagged([change(0), changeOk(1), done(2), change(3), changeOk(4)]) === '2');
+  check('unproven: a failed change still needs a check', flagged([change(0), S(1, 'tool_result', { tool: 'update_config', args: '{}', error: true }), done(2)]) === '2');
+  check('unproven: a check that errors proves nothing', flagged([change(0), changeOk(1), read(2), readRes(3, true), done(4)]) === '4');
+  check('unproven: no tools at all is flagged', flagged([done(0)]) === '0');
+  check('unproven: only checks, no change, is proven', flagged([read(0), readRes(1), done(2)]) === '');
+  check('unproven: an unknown tool name counts as a change', flagged([S(0, 'tool_call', { tool: 'run_migration', args: '{}' }), done(1)]) === '1');
+}
+{
+  const c = (tool, args = '{}') => isCheckCall({ tool, args });
+  check('check words: get_ticket, readFile, run_tests, http_get, index_status are checks', ['get_ticket', 'readFile', 'run_tests', 'http_get', 'index_status'].every((t) => c(t)));
+  check('change words win: update_status, set_check, http_post are changes', !c('update_status') && !c('set_check') && !c('http_post'));
+  check('unknown names are changes: run_migration, rotate_api_key, drop_table', !c('run_migration') && !c('rotate_api_key') && !c('drop_table'));
+  check('shell: git status, pytest -q, curl GET, cat | grep are checks', ['git status', 'pytest -q', 'curl -s https://x.test/healthz', 'cat a.txt | grep x', 'npm run test'].every((cmd) => c('bash', JSON.stringify({ command: cmd }))));
+  check('shell: writes, POST, rm and mixed chains are changes', ['echo x > a.txt', 'curl -X POST https://x.test', 'rm -rf build', 'git status && git push', 'sed -i s/a/b/ f'].every((cmd) => !c('run_command', JSON.stringify({ command: cmd }))));
+  check('shell: a shell tool without a command string is a change', !c('bash', '{}'));
+}
 
 // ------------------------------------------------------------------ unit: usage
 

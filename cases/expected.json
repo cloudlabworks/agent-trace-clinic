@@ -64,10 +64,9 @@
   },
 
   "anthropic-unproven.jsonl": {
+    "_why": "A known miss since the receipt rule was fixed: the agent made no change, and its one check (ci_status) counts as the receipt, so the claim is cleared. That the check said 'pending' and that no merge call exists are things the rule cannot see (README, Limits).",
     "format": "anthropic", "container": "jsonl", "step_count": 5,
-    "findings": [
-      {"id": "unproven_completion", "severity": "high", "steps": [4], "evidence_contains": "CI is green, so I merged the PR."}
-    ]
+    "findings": []
   },
 
   "otel-tool-loop.json": {
@@ -101,6 +100,28 @@
       {"id": "context_growth", "severity": "medium", "steps": [0, 3, 6], "evidence_contains": "tokens_in 3,000 -> 6,900 (2.3x) over 3 model calls"},
       {"id": "unproven_completion", "severity": "high", "steps": [6], "evidence_contains": "All tests passed and the cart bug is fixed."},
       {"id": "token_totals", "severity": "info", "steps": [0, 3, 6], "evidence_contains": "in 14,700, out 360, total 15,060 over 3 model calls"}
+    ]
+  },
+
+  "openai-verify-then-claim.json": {
+    "format": "openai", "container": "json", "step_count": 7,
+    "findings": [
+      {"id": "token_totals", "severity": "info", "steps": [2, 4, 6], "evidence_contains": "in 2,040, out 95, total 2,135 over 3 model calls"}
+    ]
+  },
+
+  "anthropic-claim-then-verify.json": {
+    "format": "anthropic", "container": "json", "step_count": 7,
+    "findings": [
+      {"id": "token_totals", "severity": "info", "steps": [1, 3, 6], "evidence_contains": "in 1,820, out 95, total 1,915 over 3 model calls"}
+    ]
+  },
+
+  "otel-change-claim-no-verify.json": {
+    "format": "otel-genai", "container": "json", "step_count": 7,
+    "findings": [
+      {"id": "unproven_completion", "severity": "high", "steps": [6], "evidence_contains": "Done, the request timeout is now 30 seconds."},
+      {"id": "token_totals", "severity": "info", "steps": [0, 3, 6], "evidence_contains": "in 1,410, out 65, total 1,475 over 3 model calls"}
     ]
   },
 

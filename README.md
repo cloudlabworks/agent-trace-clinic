@@ -74,10 +74,28 @@ Each detector is a pure function over the step list. Each one returns findings s
 | `retry_storm` | high | Three or more `tool_result` steps with `error: true` for the same `tool`, whatever the args. One finding per tool; `steps` lists the failed results. |
 | `context_growth` | medium if the multiple is at least 2, high if at least 5 | Take every step with a recorded `tokens_in` (the context curve). Fire if there are at least 3 points, the curve never goes down, the first value is above 0, and last / first is at least 2. `steps` lists the points. `data` carries the curve, first, last and the multiple. A curve that dips once (for example after compaction) does not fire. |
 | `unhandled_tool_error` | medium | A failed `tool_result` is unhandled when the next `tool_call` after it has the same tool and identical canonical args, or when the failed result is the last step of the trace. One finding per tool+args group; `steps` lists the unhandled failed results. |
-| `unproven_completion` | high | An assistant `message` contains a completion claim, and no `tool_call` step comes after it. One finding per message. |
+| `unproven_completion` | high | An assistant `message` contains a completion claim, and no check ran after the last change made before that message, either before the claim or after it. One finding per message. See [Receipts: checks and changes](#receipts-checks-and-changes). |
 | `token_totals` | info | Present when any step records tokens. `steps` lists those steps. `data` holds the per-step counts and the task totals (in, out, total, model calls). |
 
 A completion claim is a sentence (split on `.`, `!`, `?` and newlines) that contains one of these whole words, in any case: done, fixed, deployed, passed, passes, passing, complete, completed, resolved, succeeded, successfully, shipped, merged. Questions (sentences ending in `?`) are skipped. So is a match when any of the three words right before it is one of: not, no, never, cannot, unable, failed, fail, will, once, until, after, if, when, before, yet, still, need, needs, should, would, could, might, may, or any word ending in `n't` or `'ll`. That way "not done yet", "could not be completed" and "I'll get it done" don't count.
+
+### Receipts: checks and changes
+
+`unproven_completion` sorts every tool call into a check (it only reads state) or a change (anything else).
+
+- **Name words.** A tool name is split into lower-case words at every non-letter, non-digit character and at camelCase humps: `get_ticket` is `get ticket`, `readFile` is `read file`.
+- **Check.** The name has a check word and no change word.
+  - Check words: get, read, list, ls, show, view, describe, status, check, verify, validate, test, tests, health, healthz, healthcheck, search, query, fetch, find, lookup, inspect, diff, log, logs, ping, lint, cat, grep, curl, wget, poll, count, exists.
+  - Change words, which win over check words (`update_status` is a change): set, update, write, edit, patch, create, add, insert, delete, remove, drop, put, post, deploy, restart, start, stop, kill, merge, push, commit, apply, install, uninstall, send, upload, move, rename, copy, reset, close, open, approve, publish, release, rollback, migrate, scale, enable, disable, assign, submit, save, replace, append, clear, revert.
+  - **A name with neither is a change.** `run_migration`, `rotate_api_key` and `drop_table` are changes. `run` is in neither list, so `run_tests` is a check and `run_backup` is a change.
+- **Shell tools.** When every word of the name is one of bash, shell, sh, zsh, terminal, exec, execute, run, command, cmd, local, the call is judged by its `command` (or `cmd`) argument instead. It is a check only when every part of the command line (split at `&&`, `||`, `;` and `|`) starts with one of: cat, ls, head, tail, grep, rg, find, stat, wc, diff, curl, wget, ping, pytest, jest, vitest, mocha, tox, or with git status/diff/log/show, npm/pnpm/yarn test, npm run test, node --test, make test/check, go test/vet, cargo test/check, kubectl get/describe/logs, systemctl status, docker ps/logs/inspect. A command with `>` or `tee` writes a file and is a change. curl and wget are changes when they send data or a non-GET method (`-X`, `--request`, `-d`, `--data*`, `-F`, `--form`, `-T`, `--upload-file`, `--post-data`, `--method`).
+
+The rule for a claim at step c:
+
+1. Let L be the last change (a `tool_call` that is not a check) before c. A change counts even when its result is an error.
+2. The claim is proven when some check comes after L, anywhere in the task: before the claim ("verify, then say done") or after it ("say done, then verify").
+3. A check whose result is marked as an error proves nothing. A result belongs to the first tool_result after the call with the same tool and arguments. A change's own result ("ok: updated") is never a receipt.
+4. With no change before the claim, any successful check in the task proves it. With no tool calls at all, the claim is flagged.
 
 ## Usage at scale
 
@@ -85,7 +103,7 @@ A completion claim is a sentence (split on `.`, `!`, `?` and newlines) that cont
 
 ## Cases
 
-`cases/` holds 17 synthetic traces. Every one is made up for this suite and none comes from a real agent. `cases/expected.json` lists the exact findings each must produce (id, severity, steps, and an evidence substring), or the error it must raise. The expected findings were written from each case's design, before the detectors were run on it. The test fails on a missing finding or an extra one.
+`cases/` holds 20 synthetic traces. Every one is made up for this suite and none comes from a real agent. `cases/expected.json` lists the exact findings each must produce (id, severity, steps, and an evidence substring), or the error it must raise. The expected findings were written from each case's design, before the detectors were run on it. The test fails on a missing finding or an extra one.
 
 | Case | Format | Designed failure | Expected findings |
 | --- | --- | --- | --- |
@@ -97,11 +115,14 @@ A completion claim is a sentence (split on `.`, `!`, `?` and newlines) that cont
 | `anthropic-context-growth.json` | anthropic (`{system, messages}`) | reads ever-larger logs; one turn reports cache reads | context_growth (high, 8.5x), token_totals |
 | `anthropic-clean.json` | anthropic | control: "Deployed." followed by a health check | token_totals |
 | `anthropic-false-done-after-error.json` | anthropic | restart fails, agent says "Done" | unproven_completion, token_totals |
-| `anthropic-unproven.jsonl` | anthropic, JSONL | CI still pending, agent says it merged; no token counts | unproven_completion |
+| `anthropic-unproven.jsonl` | anthropic, JSONL | CI still pending, agent says it merged; no token counts | none: a known miss. The agent made no change, so its CI status check counts as the receipt. The rule cannot see that the check said "pending" or that no merge call exists. Until the receipt rule was fixed, this case expected unproven_completion. |
 | `otel-tool-loop.json` | otel-genai, OTLP | same fetch 4 times; spans shuffled in the file; an HTTP span and an `invoke_agent` span to skip | tool_loop, token_totals |
 | `otel-retry-storm.json` | otel-genai, flat spans | identical query times out 3 times, then a cache read | tool_loop, retry_storm, unhandled_tool_error (first two errors), token_totals |
 | `otel-clean.json` | otel-genai, OTLP | control: one tool call, structured result | token_totals |
 | `otel-growth-unproven.jsonl` | otel-genai, JSONL | tests fail, a patch, then "All tests passed" with no re-run; context grows 2.3x | context_growth (medium), unproven_completion, token_totals |
+| `openai-verify-then-claim.json` | openai (`{messages}`) | control: rotates a key, checks its status, then says "Done." | token_totals |
+| `anthropic-claim-then-verify.json` | anthropic | control: rebuilds an index, says "Rebuild completed.", then checks the index status | token_totals |
+| `otel-change-claim-no-verify.json` | otel-genai, flat spans | reads a setting, changes it, says "Done" with no check after the change | unproven_completion, token_totals |
 | `chat-text-plain.json` | chat-text | control: no tools, no claims | none |
 | `unknown-format.json` | none | an unrelated JSON document | error |
 | `mixed-formats.json` | none | OpenAI tool_calls with an Anthropic tool_result | error |
@@ -234,7 +255,7 @@ The bake-off can be re-run on other small models with the same harness. The bar 
 What these checks cannot see:
 
 - Intent. A loop of three identical calls may be legitimate polling, and a "done" may be true. The findings point at steps to read; they are not verdicts.
-- Whether a later tool call actually checks the claim. `unproven_completion` clears a claim if any tool call follows it, even an unrelated one. It also flags a final "done" that follows a verification, because the receipt has to come after the claim. Claim words outside the list ("it works now", "all good") are missed, and claim words used in other senses ("what I've done so far") can match.
+- Whether a check actually checks the claim. `unproven_completion` sorts tools by name, so any check after the last change clears a claim, even a read of something unrelated, and even a check whose result contradicts the claim. That last case is a misread check (MAST FM-3.3), as in `anthropic-unproven.jsonl`. A claimed action that no tool call performed ("I merged the PR" with no merge call) is not seen either. Tool names that hide a write behind a check word (`check_and_fix`) read as checks. Claim words outside the list ("it works now", "all good") are missed, and claim words used in other senses ("what I've done so far") can match.
 - Tool failures a tool doesn't mark. An OpenAI tool that returns "could not connect" without a leading `Error` reads as a success. So does an OTel span with no error status.
 - An agent that stops after a failure. `unhandled_tool_error` only looks at the next tool call. If the agent writes a message after the error and then makes no more calls, that does not count as unhandled. A false "done" in that message is caught by `unproven_completion` instead.
 - Retries inside a tool, or retries done automatically by an SDK. The OTel spec puts those inside one span, so they don't show in the trace.

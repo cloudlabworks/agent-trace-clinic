@@ -184,22 +184,113 @@ export function findClaim(text) {
   return null;
 }
 
+// ---- tool calls: check or change
+// A check reads state without changing it. Everything that is not a check is
+// treated as a change, including tools whose names say nothing either way.
+export const CHECK_WORDS = new Set([
+  'get', 'read', 'list', 'ls', 'show', 'view', 'describe', 'status', 'check', 'verify', 'validate', 'test', 'tests',
+  'health', 'healthz', 'healthcheck', 'search', 'query', 'fetch', 'find', 'lookup', 'inspect', 'diff', 'log', 'logs',
+  'ping', 'lint', 'cat', 'grep', 'curl', 'wget', 'poll', 'count', 'exists',
+]);
+// A change word overrides a check word in the same name (update_status is a change).
+export const CHANGE_WORDS = new Set([
+  'set', 'update', 'write', 'edit', 'patch', 'create', 'add', 'insert', 'delete', 'remove', 'drop', 'put', 'post',
+  'deploy', 'restart', 'start', 'stop', 'kill', 'merge', 'push', 'commit', 'apply', 'install', 'uninstall', 'send',
+  'upload', 'move', 'rename', 'copy', 'reset', 'close', 'open', 'approve', 'publish', 'release', 'rollback',
+  'migrate', 'scale', 'enable', 'disable', 'assign', 'submit', 'save', 'replace', 'append', 'clear', 'revert',
+]);
+// Shell-style tools: every word of the name is one of these. They are classified by their command.
+const SHELL_WORDS = new Set(['bash', 'shell', 'sh', 'zsh', 'terminal', 'exec', 'execute', 'run', 'command', 'cmd', 'local']);
+const SHELL_CHECK_FIRST = new Set([
+  'cat', 'ls', 'head', 'tail', 'grep', 'rg', 'find', 'stat', 'wc', 'diff', 'curl', 'wget', 'ping', 'pytest', 'jest',
+  'vitest', 'mocha', 'tox',
+]);
+const SHELL_CHECK_TWO = new Set([
+  'git status', 'git diff', 'git log', 'git show', 'npm test', 'pnpm test', 'yarn test', 'node --test', 'make test',
+  'make check', 'go test', 'go vet', 'cargo test', 'cargo check', 'kubectl get', 'kubectl describe', 'kubectl logs',
+  'systemctl status', 'docker ps', 'docker logs', 'docker inspect',
+]);
+
+// Words of a tool name: split on anything that is not a letter or digit, and at camelCase humps.
+export function nameWords(name) {
+  return String(name ?? '')
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
+}
+
+function shellCommand(args) {
+  let a;
+  try {
+    a = JSON.parse(args ?? 'null');
+  } catch {
+    return null;
+  }
+  const c = a && typeof a === 'object' && !Array.isArray(a) ? a.command ?? a.cmd : null;
+  if (Array.isArray(c) && c.every((x) => typeof x === 'string')) return c.join(' ');
+  return typeof c === 'string' ? c : null;
+}
+
+function shellIsCheck(command) {
+  if (/>|\btee\b/.test(command)) return false; // writes a file
+  const segments = command.split(/&&|\|\||;|\|/).map((x) => x.trim()).filter(Boolean);
+  if (segments.length === 0) return false;
+  return segments.every((seg) => {
+    const words = seg.split(/\s+/).filter((w) => !/^[A-Za-z_][A-Za-z0-9_]*=/.test(w) && w !== 'sudo');
+    const first = (words[0] ?? '').split('/').pop();
+    if (first === 'curl' || first === 'wget') {
+      return !/(^|\s)(-X|--request|-d|--data\S*|-F|--form|-T|--upload-file|--post-data|--method)(\s|=|$)/.test(seg) || /(-X|--request)[\s=]+GET\b/.test(seg);
+    }
+    if (SHELL_CHECK_FIRST.has(first)) return true;
+    return SHELL_CHECK_TWO.has(`${first} ${words[1] ?? ''}`) || (first === 'npm' && words[1] === 'run' && words[2] === 'test');
+  });
+}
+
+// True when a tool call only reads state (a check), false when it is a change.
+export function isCheckCall(step) {
+  const words = nameWords(step.tool);
+  if (words.length > 0 && words.every((w) => SHELL_WORDS.has(w))) {
+    const command = shellCommand(step.args);
+    return command !== null && shellIsCheck(command);
+  }
+  return words.some((w) => CHECK_WORDS.has(w)) && !words.some((w) => CHANGE_WORDS.has(w));
+}
+
+// A claim at step c is proven when a check runs after the last change made
+// before c: before the claim or after it. A check whose result is marked as an
+// error proves nothing. A change counts as a change even when it failed.
 export function detectUnprovenCompletion(steps) {
   const findings = [];
+  const calls = steps.filter((t) => t.kind === 'tool_call');
+  // The result of a call: the first unused tool_result after it with the same tool and args.
+  const used = new Set();
+  const results = new Map();
+  for (const call of calls) {
+    const r = steps.find((t) => t.i > call.i && t.kind === 'tool_result' && !used.has(t.i) && t.tool === call.tool && t.args === call.args);
+    if (r) {
+      used.add(r.i);
+      results.set(call.i, r);
+    }
+  }
+  const goodCheck = (call) => isCheckCall(call) && !(results.get(call.i)?.error === true);
   for (const s of steps) {
     if (s.kind !== 'message' || s.role !== 'assistant') continue;
     const claim = findClaim(s.text);
     if (claim === null) continue;
-    const checked = steps.some((t) => t.i > s.i && t.kind === 'tool_call');
-    if (checked) continue;
+    const changes = calls.filter((t) => t.i < s.i && !isCheckCall(t));
+    const lastChange = changes.length ? changes[changes.length - 1].i : -1;
+    if (calls.some((t) => t.i > lastChange && goodCheck(t))) continue;
     findings.push({
       id: 'unproven_completion',
       severity: 'high',
       steps: [s.i],
       evidence: quote(claim),
       explain:
-        'The agent says the work is finished, and no tool call comes after that claim. ' +
-        'A receipt (a test run, a health check, a read-back) after the claim is what turns "done" into a fact.',
+        (lastChange >= 0
+          ? `The agent says the work is finished, and no check (a read, a test, a status call) ran after its last change at step ${lastChange}. `
+          : 'The agent says the work is finished, and no check (a read, a test, a status call) ran in this task. ') +
+        'A receipt after the change, before or after the claim, is what turns "done" into a fact.',
     });
   }
   return findings;

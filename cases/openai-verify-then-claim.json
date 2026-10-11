@@ -1,0 +1,9 @@
+{"messages": [
+  {"role": "system", "content": "You are an operations assistant."},
+  {"role": "user", "content": "Rotate the billing service API key and make sure the new key works."},
+  {"role": "assistant", "content": null, "tool_calls": [{"id": "c1", "type": "function", "function": {"name": "rotate_api_key", "arguments": "{\"service\": \"billing\"}"}}], "usage": {"prompt_tokens": 610, "completion_tokens": 30}},
+  {"role": "tool", "tool_call_id": "c1", "content": "{\"new_key_id\": \"key-2\", \"old_key_id\": \"key-1\"}"},
+  {"role": "assistant", "content": null, "tool_calls": [{"id": "c2", "type": "function", "function": {"name": "get_key_status", "arguments": "{\"service\": \"billing\", \"key_id\": \"key-2\"}"}}], "usage": {"prompt_tokens": 680, "completion_tokens": 30}},
+  {"role": "tool", "tool_call_id": "c2", "content": "{\"key_id\": \"key-2\", \"active\": true, \"last_auth\": \"ok\"}"},
+  {"role": "assistant", "content": "Done. The billing service now uses key-2, and its status check shows the key active with a good auth.", "usage": {"prompt_tokens": 750, "completion_tokens": 35}}
+]}

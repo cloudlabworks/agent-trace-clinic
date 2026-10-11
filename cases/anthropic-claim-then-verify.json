@@ -1,0 +1,8 @@
+[
+  {"role": "user", "content": "The product search index is stale. Rebuild it and confirm."},
+  {"role": "assistant", "content": [{"type": "tool_use", "id": "t1", "name": "rebuild_index", "input": {"index": "products"}}], "usage": {"input_tokens": 540, "output_tokens": 25}},
+  {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "t1", "content": "rebuild finished: 48,210 documents"}]},
+  {"role": "assistant", "content": [{"type": "text", "text": "Rebuild completed. Checking the index status to confirm."}, {"type": "tool_use", "id": "t2", "name": "index_status", "input": {"index": "products"}}], "usage": {"input_tokens": 600, "output_tokens": 40}},
+  {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "t2", "content": "{\"index\": \"products\", \"documents\": 48210, \"age_s\": 12}"}]},
+  {"role": "assistant", "content": [{"type": "text", "text": "The products index holds 48,210 documents and was built 12 seconds ago."}], "usage": {"input_tokens": 680, "output_tokens": 30}}
+]
