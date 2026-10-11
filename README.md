@@ -130,7 +130,7 @@ A completion claim is a sentence (split on `.`, `!`, `?` and newlines) that cont
 - **The model answers with a JSON list** such as `[{"mode": "FM-3.2", "step": 3, "quote": "Done, the payments worker"}]`. An empty list means the model saw no failure.
 - **transformers.js has no grammar-constrained decoding,** so the parser enforces the format instead:
   - Decoding is greedy, with a token cap.
-  - Any `<think>` block and any code fences are stripped.
+  - Everything up to the last `</think>` is dropped (the model's reasoning), and so are any code fences.
   - The first JSON array is read. If the output was cut off, the complete label objects that did come out are kept.
 - **Each label is checked:**
   - The mode must be one of the 14 ids.
@@ -190,7 +190,7 @@ Conditions of the runs:
 
 #### Candidates
 
-- **Qwen3-0.6B:** `onnx-community/Qwen3-0.6B-ONNX`, revision `1e0a4a196ecabdf9a879664110574563d3f372d3`. Apache-2.0 base model, not gated.
+- **Qwen3-0.6B:** `onnx-community/Qwen3-0.6B-ONNX`, revision `1e0a4a196ecabdf9a879664110574563d3f372d3`, not gated. The ONNX repo declares no licence of its own. Its base model, `Qwen/Qwen3-0.6B`, is Apache-2.0 according to the Hub.
 - **SmolLM3-3B:** there is no `onnx-community/SmolLM3-3B-ONNX`; the Hub API returns 401 for that name. The run used the official `HuggingFaceTB/SmolLM3-3B-ONNX`, revision `af50613703fb6f10ffcb21b27ad48edcb8334232`, which is Apache-2.0, not gated, and built for transformers.js.
 
 Both are hybrid reasoning models. "Plain" turns thinking off; "thinking" leaves it on.
@@ -212,10 +212,12 @@ The table re-parses every saved output with the current parser. The quote-reloca
 
 No candidate was usable under the rule, so the rule's last clause applies: the smallest model, Qwen3-0.6B, is wired in. The rule does not choose between variants of one model, so that choice is ours:
 
-- **Thinking is on.** It is the only setting with no false positives on the five clean traces. With thinking off, the model named failures on 2 of them, which is worse than no opinion.
+- **Thinking is on.** With thinking on, Qwen3 named no failures on the five clean traces, with or without the repetition penalty. With thinking off, it named failures on 2 of them, which is worse than no opinion. Without the penalty it also got more right.
+- **On the clean traces it answered `[]` on 3** and gave no opinion on the other 2.
 - **It is weak even so.** It names an expected mode on 1 of the 9 failure cases. On 6 of 14 cases it gives no opinion. In all 6 it was still reasoning, often in a loop, when it reached the 1024-token cap.
-- **It is slow on CPU.** A trace takes about 40 to 60 s on this machine's CPU. Treat the model pass as experimental.
-- **`q4f16` was checked on CPU.** With thinking off, it gave the same output as `q4` on all 14 cases, character for character. The thinking runs used `q4`.
+- **It is slow on CPU.** A trace takes about 10 to 60 s on this machine's CPU, with a median of 43 s. Treat the model pass as experimental.
+- **`q4f16` was checked on CPU.** With thinking off, it gave the same output as `q4` on all 14 cases, character for character. The thinking runs used `q4`, so the browser's WebGPU default (`q4f16` with thinking on) has not been measured.
+- **The browser path has not been run end to end.** The pinned CDN bundle is checked: it is an ES module, it exports what `labeller.js` uses, and it is byte-identical to the npm package's `transformers.min.js`.
 
 What did not work:
 

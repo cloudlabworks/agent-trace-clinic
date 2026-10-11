@@ -108,6 +108,9 @@ export const ANSWER_PREFIX = '';
 
 function stripNoise(text) {
   let t = String(text ?? '');
+  // The answer comes after the last </think>, even when the opening tag is missing.
+  const close = t.toLowerCase().lastIndexOf('</think>');
+  if (close >= 0) t = t.slice(close + '</think>'.length);
   t = t.replace(/<think>[\s\S]*?<\/think>/gi, ' ');
   t = t.replace(/<think>[\s\S]*$/i, ' '); // an unclosed think block: nothing usable after it
   t = t.replace(/```[a-zA-Z]*\n?/g, ' ').replace(/```/g, ' ');
@@ -249,7 +252,8 @@ export function toFindings(result, modelId = DEFAULT_MODEL.id) {
 
 // --------------------------------------------------------------------------- model
 
-const inBrowser = () => typeof window !== 'undefined' && typeof document !== 'undefined';
+// Anything that is not Node counts as a browser: a page or a Web Worker (which has no window).
+const inBrowser = () => !(typeof process !== 'undefined' && process.versions?.node);
 
 async function webgpuAdapter() {
   try {

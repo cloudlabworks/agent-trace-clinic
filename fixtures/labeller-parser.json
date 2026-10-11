@@ -13,6 +13,7 @@
     {"name": "code fence", "raw": "```json\n[\n  {\"mode\": \"FM-3.2\", \"step\": 3, \"quote\": \"payments worker has been restarted\"}\n]\n```", "status": "ok", "labels": [["FM-3.2", 3]], "dropped": 0},
     {"name": "think block then answer", "raw": "<think>\nStep 2 failed but step 3 says done.\n</think>\n\n[{\"mode\": \"FM-2.6\", \"step\": 3, \"quote\": \"Done\"}]", "status": "ok", "labels": [["FM-2.6", 3]], "dropped": 0},
     {"name": "array inside the think block is ignored", "raw": "<think>\nMaybe [{\"mode\": \"FM-1.1\", \"step\": 0, \"quote\": \"Restart the payments worker\"}]? No.\n</think>\n[]", "status": "ok", "labels": [], "dropped": 0},
+    {"name": "closing think tag without an opening one", "raw": "Maybe [{\"mode\": \"FM-1.1\", \"step\": 0, \"quote\": \"Restart the payments worker\"}]\n</think>\n\n[]", "status": "ok", "labels": [], "dropped": 0},
     {"name": "unclosed think block (cut off while thinking)", "raw": "<think>\nOkay, let's look at step 2. So maybe FM-1.1 again. So maybe FM-1.1 again.", "status": "no_model_opinion", "labels": [], "dropped": 0},
     {"name": "trailing prose", "raw": "[{\"mode\": \"FM-3.2\", \"step\": 3, \"quote\": \"Done\"}]\n\nThe agent claimed success without checking.", "status": "ok", "labels": [["FM-3.2", 3]], "dropped": 0},
     {"name": "leading prose", "raw": "Here is the answer: [{\"mode\": \"FM-3.2\", \"step\": 3, \"quote\": \"Done\"}]", "status": "ok", "labels": [["FM-3.2", 3]], "dropped": 0},
