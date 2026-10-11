@@ -72,7 +72,7 @@ Each detector is a pure function over the step list. Each one returns findings s
 | --- | --- | --- |
 | `tool_loop` | high | Three or more `tool_call` steps with the same `tool` and identical canonical `args`, anywhere in the trace (not only back to back). One finding per tool+args group; `steps` lists the calls. |
 | `retry_storm` | high | Three or more `tool_result` steps with `error: true` for the same `tool`, whatever the args. One finding per tool; `steps` lists the failed results. |
-| `context_growth` | medium if the multiple is at least 2, high if at least 5 | Take every step with a recorded `tokens_in` (the context curve). Fire if there are at least 3 points, the curve never goes down, the first value is above 0, and last / first is at least 2. `steps` lists the points. `data` carries the curve, first, last and the multiple. A curve that dips once (for example after compaction) does not fire. |
+| `context_growth` | medium; high if the multiple is at least 5 | Take every step with a recorded `tokens_in` (the context curve). Fire when all of these hold: there are at least 3 points; the curve never goes down; the first value is above 0; last / first is at least 2; and the average growth per model call, (last - first) / (points - 1), is at least 300 tokens. `steps` lists the points. `data` carries the curve, first, last, the multiple and `per_call`. A curve that dips once (for example after compaction) does not fire. See [Why 300 tokens per call](#why-300-tokens-per-call). |
 | `unhandled_tool_error` | medium | A failed `tool_result` is unhandled when the next `tool_call` after it has the same tool and identical canonical args, or when the failed result is the last step of the trace. One finding per tool+args group; `steps` lists the unhandled failed results. |
 | `unproven_completion` | high | An assistant `message` contains a completion claim, and no check ran after the last change made before that message, either before the claim or after it. One finding per message. See [Receipts: checks and changes](#receipts-checks-and-changes). |
 | `token_totals` | info | Present when any step records tokens. `steps` lists those steps. `data` holds the per-step counts and the task totals (in, out, total, model calls). |
@@ -97,13 +97,35 @@ The rule for a claim at step c:
 3. A check whose result is marked as an error proves nothing. A result belongs to the first tool_result after the call with the same tool and arguments. A change's own result ("ok: updated") is never a receipt.
 4. With no change before the claim, any successful check in the task proves it. With no tool calls at all, the claim is flagged.
 
+### Why 300 tokens per call
+
+The old rule fired at twice the first call's input. Ordinary turn-by-turn growth crosses that whenever the first call is small: a 200-token first call that adds 140 tokens a turn is past 2x after three turns. The patient (see [Patient traces](#patient-traces)) gives 18 curves, measured with its stub model's character/4 token estimates:
+
+| Patient traces | Count | Average growth per call | Largest single step | Last / first |
+| --- | --- | --- | --- | --- |
+| clean, tool_loop, retry_storm, unproven_done, forgotten_instruction | 15 | 101 to 146 | 168 | 1.33 to 1.89 |
+| context_growth | 3 | 614 to 919 | 2,099 to 2,136 | 3.01 to 4.76 |
+
+- **300 is about twice the steepest non-growth trace (146).** It is also below the shallowest growth trace (614).
+- **The fault is still caught in long runs.** The growth fault adds one untrimmed docs article of about 2,100 tokens on top of ordinary growth of about 130 per call. That stays above 300 per call up to 12 model calls, which is the patient's per-task cap.
+- **The median step was rejected.** It does not separate the two groups, because the growth arrives in one or two jumps.
+- **A final-size floor was rejected.** A large system prompt alone would cross it.
+- **The 2x multiple stays as a second gate.** A large context that adds a few hundred tokens a turn is not reported.
+
+The patient's clean prompt is long (about 1,100 tokens), so its clean controls were never at risk. The two checks that show the fix are:
+
+- a unit check that takes the clean docs-answer curve minus 1,100 tokens (122 to 835, 6.8x, which the old rule flagged as high);
+- the case `openai-small-first-call.json` (180 to 760, 4.2x, +145 per call).
+
+Both are quiet under the new rule. Real token counts differ from the stub's estimates, so the threshold is a starting point, not a measured constant.
+
 ## Usage at scale
 
 `usage.js` adds up tokens for the task, which is the whole trace, and multiplies them per day at 10 and 1,000 tasks (configurable). No prices ship with this project. You can pass a price per million tokens, either in and out separately or one price for both, in whatever unit you use. Cost is then computed in that same unit. With no price, no cost is computed or printed. `per_task.complete` is false when some model call recorded only one side of its token counts.
 
 ## Cases
 
-`cases/` holds 20 synthetic traces. Every one is made up for this suite and none comes from a real agent. `cases/expected.json` lists the exact findings each must produce (id, severity, steps, and an evidence substring), or the error it must raise. The expected findings were written from each case's design, before the detectors were run on it. The test fails on a missing finding or an extra one.
+`cases/` holds 21 synthetic traces. Every one is made up for this suite and none comes from a real agent. `cases/expected.json` lists the exact findings each must produce (id, severity, steps, and an evidence substring), or the error it must raise. The expected findings were written from each case's design, before the detectors were run on it. The test fails on a missing finding or an extra one.
 
 | Case | Format | Designed failure | Expected findings |
 | --- | --- | --- | --- |
@@ -123,6 +145,7 @@ The rule for a claim at step c:
 | `openai-verify-then-claim.json` | openai (`{messages}`) | control: rotates a key, checks its status, then says "Done." | token_totals |
 | `anthropic-claim-then-verify.json` | anthropic | control: rebuilds an index, says "Rebuild completed.", then checks the index status | token_totals |
 | `otel-change-claim-no-verify.json` | otel-genai, flat spans | reads a setting, changes it, says "Done" with no check after the change | unproven_completion, token_totals |
+| `openai-small-first-call.json` | openai | control: a 180-token first call growing about 145 tokens a turn (4.2x), which the old 2x rule flagged | token_totals |
 | `chat-text-plain.json` | chat-text | control: no tools, no claims | none |
 | `unknown-format.json` | none | an unrelated JSON document | error |
 | `mixed-formats.json` | none | OpenAI tool_calls with an Anthropic tool_result | error |
@@ -256,6 +279,7 @@ What these checks cannot see:
 
 - Intent. A loop of three identical calls may be legitimate polling, and a "done" may be true. The findings point at steps to read; they are not verdicts.
 - Whether a check actually checks the claim. `unproven_completion` sorts tools by name, so any check after the last change clears a claim, even a read of something unrelated, and even a check whose result contradicts the claim. That last case is a misread check (MAST FM-3.3), as in `anthropic-unproven.jsonl`. A claimed action that no tool call performed ("I merged the PR" with no merge call) is not seen either. Tool names that hide a write behind a check word (`check_and_fix`) read as checks. Claim words outside the list ("it works now", "all good") are missed, and claim words used in other senses ("what I've done so far") can match.
+- Context growth on a different scale. The 300-tokens-per-call threshold is set from the patient's stub estimates. An agent whose tool outputs are naturally large, such as file reads or logs, can pass it with no fault, and a growth that arrives in one jump in a very long run can fall under it.
 - Tool failures a tool doesn't mark. An OpenAI tool that returns "could not connect" without a leading `Error` reads as a success. So does an OTel span with no error status.
 - An agent that stops after a failure. `unhandled_tool_error` only looks at the next tool call. If the agent writes a message after the error and then makes no more calls, that does not count as unhandled. A false "done" in that message is caught by `unproven_completion` instead.
 - Retries inside a tool, or retries done automatically by an SDK. The OTel spec puts those inside one span, so they don't show in the trace.

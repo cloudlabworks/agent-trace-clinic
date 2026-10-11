@@ -9,6 +9,7 @@ export const RULES = {
   retryMin: 3, // retry_storm: same tool returning an error at least this many times
   growthMinPoints: 3, // context_growth: model calls with a recorded tokens_in
   growthMultiple: 2, // context_growth: last / first at least this
+  growthMinPerCall: 300, // context_growth: and (last - first) / (points - 1) at least this many tokens
   growthHighMultiple: 5, // context_growth: severity high at or above this
   quoteMax: 80, // evidence quotes are cut to this many characters
 };
@@ -97,19 +98,24 @@ export function detectContextGrowth(steps) {
   const last = curve[curve.length - 1].tokens_in;
   if (!(first > 0)) return [];
   const multiple = last / first;
-  if (multiple < RULES.growthMultiple) return [];
+  const perCall = (last - first) / (curve.length - 1);
+  // Both gates: the context at least doubled, and it grew by enough tokens per
+  // call to matter. The second gate keeps a small first call from tripping
+  // the first one on ordinary turn-by-turn growth.
+  if (multiple < RULES.growthMultiple || perCall < RULES.growthMinPerCall) return [];
   const m = Math.round(multiple * 10) / 10;
+  const pc = Math.round(perCall);
   return [
     {
       id: 'context_growth',
       severity: multiple >= RULES.growthHighMultiple ? 'high' : 'medium',
       steps: curve.map((p) => p.i),
-      evidence: `tokens_in ${fmt(first)} -> ${fmt(last)} (${m}x) over ${curve.length} model calls`,
+      evidence: `tokens_in ${fmt(first)} -> ${fmt(last)} (${m}x) over ${curve.length} model calls, +${fmt(pc)} per call`,
       explain:
-        `Input tokens rose on every model call and ended ${m} times where they started. ` +
+        `Input tokens rose on every model call, by ${fmt(pc)} per call on average, and ended ${m} times where they started. ` +
         'Each call re-sends the whole history, so cost and latency per call keep climbing; ' +
         'summarising or trimming tool output is the usual fix.',
-      data: { curve, first, last, multiple },
+      data: { curve, first, last, multiple, per_call: perCall },
     },
   ];
 }

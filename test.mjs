@@ -16,6 +16,7 @@ import {
   detectUnprovenCompletion,
   findClaim,
   isCheckCall,
+  RULES,
 } from './detectors.js';
 import { usage } from './usage.js';
 import { MAST_MODES, buildMessages, parseLabels, toFindings, loadLabeller, stepLine } from './labeller.js';
@@ -168,12 +169,23 @@ check('retry: two errors is not a storm', detectRetryStorms([S(0, 'tool_result',
 check('retry: three errors on one tool, any args', detectRetryStorms([0, 1, 2].map((i) => S(i, 'tool_result', { tool: 'a', args: `{"n":${i}}`, error: true }))).map(key).join() === 'retry_storm|high|0,1,2');
 check('retry: errors split across tools do not add up', detectRetryStorms([S(0, 'tool_result', { tool: 'a', error: true }), S(1, 'tool_result', { tool: 'b', error: true }), S(2, 'tool_result', { tool: 'a', error: true })]).length === 0);
 const curve = (xs) => xs.map((t, i) => S(i, 'message', { tokens_in: t }));
-check('growth: under 2x is quiet', detectContextGrowth(curve([100, 150, 199])).length === 0);
-check('growth: exactly 2x is medium', detectContextGrowth(curve([100, 150, 200])).map(key).join() === 'context_growth|medium|0,1,2');
-check('growth: 5x is high', detectContextGrowth(curve([100, 300, 500]))[0]?.severity === 'high');
-check('growth: a dip (compaction) is not rising', detectContextGrowth(curve([100, 400, 300, 900])).length === 0);
-check('growth: two points are not a curve', detectContextGrowth(curve([100, 900])).length === 0);
-check('growth: data carries the curve and the multiple', detectContextGrowth(curve([100, 200, 400]))[0].data.multiple === 4);
+check('growth: under 2x is quiet, however steep', detectContextGrowth(curve([1000, 1500, 1999])).length === 0);
+check('growth: exactly 2x at exactly 300 per call is medium', detectContextGrowth(curve([600, 900, 1200])).map(key).join() === 'context_growth|medium|0,1,2');
+check('growth: 2x but under 300 per call is quiet', detectContextGrowth(curve([500, 749, 999])).length === 0);
+check('growth: 5x is high', detectContextGrowth(curve([1000, 3000, 5000]))[0]?.severity === 'high');
+check('growth: a dip (compaction) is not rising', detectContextGrowth(curve([1000, 4000, 3000, 9000])).length === 0);
+check('growth: two points are not a curve', detectContextGrowth(curve([1000, 9000])).length === 0);
+check('growth: data carries the curve, the multiple and the per-call growth', (() => {
+  const d = detectContextGrowth(curve([1000, 2000, 4000]))[0].data;
+  return d.multiple === 4 && d.per_call === 1500 && d.curve.length === 3;
+})());
+check('growth: thresholds are 2x and 300 per call', RULES.growthMultiple === 2 && RULES.growthMinPerCall === 300 && RULES.growthMinPoints === 3);
+// The patient's clean docs-answer curve (stub estimates), and the same curve with
+// its 1,100-token system prompt taken out: a small first call. The old 2x rule
+// fired on the second; growth per call is the same, so the new rule does not.
+check('growth: patient clean curve is quiet', detectContextGrowth(curve([1222, 1333, 1498, 1665, 1779, 1935])).length === 0);
+check('growth: same curve with a small first call is quiet', detectContextGrowth(curve([122, 233, 398, 565, 679, 835])).length === 0);
+check('growth: patient context_growth curve fires', detectContextGrowth(curve([1220, 1332, 3431, 3531, 3674])).length === 1);
 check('unhandled: error on the last step is unhandled', detectUnhandledErrors([S(0, 'tool_call', { tool: 'a', args: '{}' }), S(1, 'tool_result', { tool: 'a', args: '{}', error: true })]).map(key).join() === 'unhandled_tool_error|medium|1');
 check('unhandled: changed args after an error is handled', detectUnhandledErrors([S(0, 'tool_result', { tool: 'a', args: '{}', error: true }), S(1, 'tool_call', { tool: 'a', args: '{"x":1}' })]).length === 0);
 check('unhandled: a message after the error, then nothing, is not flagged', detectUnhandledErrors([S(0, 'tool_result', { tool: 'a', args: '{}', error: true }), S(1, 'message', { text: 'It failed.' })]).length === 0);
