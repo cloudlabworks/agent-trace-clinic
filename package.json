@@ -3,5 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "license": "MIT"
+  "license": "MIT",
+  "scripts": {
+    "test": "node test.mjs && node --test test-preview.mjs",
+    "start": "node server.mjs"
+  },
+  "engines": {
+    "node": ">=24"
+  }
 }

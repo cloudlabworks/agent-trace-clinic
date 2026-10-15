@@ -1,5 +1,7 @@
 # Agent Trace Clinic
 
+**Deterministic local preview:** [browser demo, HTML export and container instructions](LOCAL-PREVIEW.md). The optional model pass below is excluded from this preview.
+
 Paste an AI agent's trace and get a triage report. This repository holds the parts that need no model: a normaliser that turns four trace formats into one step list, deterministic detectors that look for common agent failures, a usage calculator, a test suite of synthetic traces with their expected findings, and a small CLI. It also holds an optional model pass (`labeller.js`, see [Model pass](#model-pass)), in which a small model running in the visitor's browser gives a labelled second opinion.
 
 Everything is plain JavaScript (ES modules), with no build step and no dependencies. `normalise.js`, `detectors.js`, `usage.js` and `labeller.js` use no Node built-ins, so the same files run in a browser page and under Node. Nothing is sent anywhere: the analysis is local. The optional model pass downloads a library and model weights once, but the trace never leaves the page.

@@ -11,11 +11,12 @@ import { readFileSync } from 'node:fs';
 import { normalise, TraceFormatError } from './normalise.js';
 import { runDetectors, contextCurve } from './detectors.js';
 import { usage } from './usage.js';
+import { renderHtml } from './report.js';
 
-const USAGE = 'usage: node cli.mjs <trace.json|trace.jsonl|-> [--json] [--steps] [--price N | --price-in N --price-out N] [--tasks 10,1000]';
+const USAGE = 'usage: node cli.mjs <trace.json|trace.jsonl|-> [--json | --html] [--steps] [--price N | --price-in N --price-out N] [--tasks 10,1000]';
 
 function parseArgs(argv) {
-  const opts = { file: null, json: false, steps: false, price: null, tasks: null };
+  const opts = { file: null, json: false, html: false, steps: false, price: null, tasks: null };
   const price = {};
   for (let n = 0; n < argv.length; n++) {
     const a = argv[n];
@@ -24,6 +25,7 @@ function parseArgs(argv) {
       return argv[++n];
     };
     if (a === '--json') opts.json = true;
+    else if (a === '--html') opts.html = true;
     else if (a === '--steps') opts.steps = true;
     else if (a === '--price') price.per_million = val();
     else if (a === '--price-in') price.per_million_in = val();
@@ -41,6 +43,7 @@ function parseArgs(argv) {
     else throw new Error(`unexpected argument ${a}`);
   }
   if (Object.keys(price).length) opts.price = price;
+  if (opts.html && opts.json) throw new Error('choose --html or --json, not both');
   if (opts.file === null) throw new Error('no trace file given');
   return opts;
 }
@@ -119,7 +122,9 @@ function main() {
     throw e;
   }
   const findings = runDetectors(result.steps, { instructions: result.instructions });
-  if (opts.json) {
+  if (opts.html) {
+    console.log(renderHtml({ ...result, findings, usage: u }));
+  } else if (opts.json) {
     console.log(JSON.stringify({ format: result.format, container: result.container, steps: result.steps, findings, usage: u }, null, 2));
   } else {
     console.log(textReport(opts.file, result, findings, u, opts.steps));
