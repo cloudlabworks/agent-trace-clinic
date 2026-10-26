@@ -7,7 +7,7 @@ function clear() { current = null; el('html').disabled = true; el('json').disabl
 function inspect() {
   clear();
   try {
-    if (new Blob([el('trace').value]).size > MAX) throw new Error('Trace exceeds the 2 MiB preview limit.');
+    if (new Blob([el('trace').value]).size > MAX) throw new Error('Trace exceeds the 2 MiB limit.');
     current = analyse(el('trace').value);
     el('report').srcdoc = renderHtml(current);
     el('html').disabled = false; el('json').disabled = false;
@@ -28,7 +28,7 @@ el('file').onchange = async event => {
   clear(); el('status').textContent = 'Reading trace…';
   const file = event.target.files[0]; if (!file) return;
   try {
-    if (file.size > MAX) throw new Error('Trace exceeds the 2 MiB preview limit.');
+    if (file.size > MAX) throw new Error('Trace exceeds the 2 MiB limit.');
     el('trace').value = await file.text(); inspect();
   } catch (e) { el('status').textContent = e.message; }
 };

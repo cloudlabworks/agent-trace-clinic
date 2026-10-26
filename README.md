@@ -1,6 +1,6 @@
 # Agent Trace Clinic
 
-**Deterministic local preview:** [browser demo, HTML export and container instructions](LOCAL-PREVIEW.md). The optional model pass below is excluded from this preview.
+**v0.1.0, MIT.** [Browser app, HTML export and container instructions](RUNNING.md). The optional model pass below is experimental and is not part of the release.
 
 Paste an AI agent's trace and get a triage report. This repository holds the parts that need no model: a normaliser that turns four trace formats into one step list, deterministic detectors that look for common agent failures, a usage calculator, a test suite of synthetic traces with their expected findings, and a small CLI. It also holds an optional model pass (`labeller.js`, see [Model pass](#model-pass)), in which a small model running in the visitor's browser gives a labelled second opinion.
 
@@ -349,7 +349,7 @@ Both are hybrid reasoning models. "Plain" turns thinking off; "thinking" leaves 
 
 #### Prompt variants
 
-All variants are kept, including the ones that scored zero.
+All variants are listed, including the ones that scored zero. The raw output files of four Qwen3 rows (q4 v2-plain, q4 v3-plain, q4 v3-thinking-rp1.1, q4f16 v3-plain) are not published: the model echoed the paper's definitions (CC BY-NC-ND 4.0) back in its answers. Their rows above are kept as scored before removal.
 
 - **v1 and v2, prefilled.** Two early prompts started the answer with `[`. v1 had an example with `"step": 0`. v2 used a placeholder example. Their result files were overwritten and are not kept. From the run logs:
   - Qwen3-0.6B q4 (v1 and v2 alike): exact 0, any-overlap 0, control false positives 3, no model opinion 9.
