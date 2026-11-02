@@ -11,6 +11,7 @@ Everything is plain JavaScript (ES modules), with no build step and no dependenc
 
 ```
 node test.mjs                      # run every case and unit check
+npm test                           # the above, plus the app and property-based tests
 node cli.mjs trace.json            # text report
 node cli.mjs trace.jsonl --json    # machine-readable report
 node cli.mjs trace.json --steps    # also list the normalised steps
@@ -33,7 +34,7 @@ A trace is one task: one run of an agent from request to final answer. The input
 | `chat-text`: plain role/content chat with no tool use | every message has text-only content | one `message` step per message |
 | `otel-genai`: OpenTelemetry GenAI spans: OTLP JSON (`resourceSpans[].scopeSpans[].spans[]`), a flat span array, or `{"spans": [...]}` | spans carrying `gen_ai.operation.name` | each `execute_tool` span becomes a `tool_call` plus a `tool_result`; each `chat`, `text_completion` or `generate_content` span becomes one assistant `message` carrying its token counts |
 
-Anything else fails with an error that starts `Unrecognised trace format:` and says why. That includes an empty list, an unknown role, an unknown Anthropic block type, legacy OpenAI `function_call` messages, a list that mixes OpenAI and Anthropic tool markers, a list that mixes messages and spans, and spans with no `gen_ai.operation.name`. The normaliser never guesses a format.
+Anything else fails with an error that starts `Unrecognised trace format:` and says why. That includes an empty list, an unknown role, an unknown Anthropic block type, legacy OpenAI `function_call` messages, a list that mixes OpenAI and Anthropic tool markers, a list that mixes messages and spans, and spans with no `gen_ai.operation.name`. A value of the wrong type in a place the normaliser reads (a text part whose text is not a string, a tool call that is not an object, an OTLP `scopeSpans` or `spans` that is not a list) is the same error, never a crash. The normaliser never guesses a format.
 
 ### Step shape
 
@@ -188,7 +189,7 @@ Both are quiet under the new rule. Real token counts differ from the stub's esti
 | `mixed-formats.json` | none | OpenAI tool_calls with an Anthropic tool_result | error |
 | `bad-line.jsonl` | none | line 3 is not valid JSON | error naming line 3 |
 
-`node test.mjs` runs every case, every patient trace, plus unit checks on canonical JSON, each format's edge cases, each detector's thresholds, and usage with and without a price. It also checks the model-pass prompt and parser against `fixtures/labeller-parser.json`, without loading a model. It prints pass and fail counts and exits non-zero on any failure.
+`node test.mjs` runs every case, every patient trace, plus unit checks on canonical JSON, each format's edge cases, each detector's thresholds, and usage with and without a price. It also checks the model-pass prompt and parser against `fixtures/labeller-parser.json`, without loading a model. It prints pass and fail counts and exits non-zero on any failure. `npm test` also runs `test/property.test.js`, property-based tests ([fast-check](https://fast-check.dev)) that feed generated traces to the normaliser and the full pipeline: any input gives either a well-formed step list or an `Unrecognised trace format` error, a byte order mark or CRLF line endings change nothing, JSON, JSONL and an already-parsed value give the same steps, and canonical JSON round-trips every value and ignores key order.
 
 `cases/mast-expected.json` gives the MAST failure modes each case should get (see Model pass below), with a reason for each one. Like `expected.json`, it was written from each case's design. It was committed before any model was run on the cases. It covers the 17 cases of the bake-off. The 8 cases added with the receipt fix and the `forgotten_instruction` detector are not in it, so the bake-off's case list and its counts stay the same.
 

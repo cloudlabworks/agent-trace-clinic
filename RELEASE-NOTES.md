@@ -1,5 +1,11 @@
 # Release notes
 
+## Unreleased
+
+- Property-based tests (`test/property.test.js`, fast-check 4.10.2), run by `npm test`.
+- Fix: inputs the property tests generated crashed the normaliser with a TypeError instead of an `Unrecognised trace format` error: an OTLP `scopeSpans` or `spans` that is not a list, a null span, an `arrayValue` or `kvlistValue` without a list, a non-string text part or refusal, a null OpenAI tool call, and object-valued token counts, start times or `error.type`. Object-valued counts and start times now read as not recorded.
+- Fix: a `"__proto__"` key in tool arguments was dropped from canonical JSON, and one in OTLP attributes replaced the attribute object's prototype, so a span could gain attributes it never set.
+
 ## v0.1.0 — public release, 2026-10-25
 
 - Published at https://github.com/cloudlabworks/agent-trace-clinic under MIT.
