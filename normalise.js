@@ -76,7 +76,7 @@ export function canonicalArgs(raw) {
 // Returns { data, container: "json"|"jsonl" }.
 export function parseTraceText(text) {
   if (typeof text !== 'string') fail('input is not text');
-  const body = text.replace(/^﻿/, '').trim();
+  const body = text.replace(/^\uFEFF/, '').trim();
   if (body === '') fail('input is empty');
   try {
     return { data: JSON.parse(body), container: 'json' };

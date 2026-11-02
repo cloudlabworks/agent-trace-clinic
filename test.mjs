@@ -288,8 +288,8 @@ check('unproven: user text is never a claim', detectUnprovenCompletion([S(0, 'me
   check('instruction: "Never call TOOL on X" (a scope) is not understood', kind('Never call drop_table on production.') === null);
   check('instruction: "Only use A, B and C" is tools_only', parseConstraint('Only use get_ticket, search_docs and update_ticket.', tools)?.tools.join() === 'get_ticket,search_docs,update_ticket');
   check('instruction: "Only use the search tool" (no tool ids) is not understood', kind('Only use the search tool.') === null);
-  check('instruction: "Never mention \"X\"" is forbidden_text', kind('Never mention "Project Kestrel".') === 'forbidden_text');
-  check('instruction: "Always add \"X\" to every ticket you update" ties to update_ticket only', parseConstraint('Always add the label "triaged" to every ticket you update.', tools)?.tools.join() === 'update_ticket');
+  check('instruction: "Never mention "X"" is forbidden_text', kind('Never mention "Project Kestrel".') === 'forbidden_text');
+  check('instruction: "Always add "X" to every ticket you update" ties to update_ticket only', parseConstraint('Always add the label "triaged" to every ticket you update.', tools)?.tools.join() === 'update_ticket');
   check('instruction: a requirement with no tool to tie it to is not checked', kind('Always say "thank you".') === null);
   check('instruction: unquoted constraints are not understood', kind('Never reopen a closed ticket yourself.') === null && kind('Do not promise dates, refunds or credits.') === null);
   check('instruction: conditions are not understood', kind('Do not call search_docs more than twice.') === null && kind('Always add "urgent" if the customer is angry.') === null && kind('Never call drop_table unless asked.') === null);
