@@ -5,7 +5,7 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "test": "node test.mjs && node --test test-preview.mjs",
+    "test": "node test.mjs && node --test test-preview.mjs test/*.test.js",
     "start": "node server.mjs",
     "lint": "eslint ."
   },
@@ -15,6 +15,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "eslint": "^10.14.0",
+    "fast-check": "4.10.2",
     "globals": "^17.13.0"
   },
   "overrides": {

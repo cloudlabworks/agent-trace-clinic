@@ -46,7 +46,8 @@ export function canonicalJSON(value) {
 function sortKeys(v) {
   if (Array.isArray(v)) return v.map(sortKeys);
   if (v && typeof v === 'object') {
-    const out = {};
+    // No prototype, so a "__proto__" key from JSON.parse stays an ordinary key.
+    const out = Object.create(null);
     for (const k of Object.keys(v).sort()) {
       if (v[k] !== undefined) out[k] = sortKeys(v[k]);
     }
@@ -194,8 +195,9 @@ function step(fields) {
   };
 }
 
+// A count from a number or a numeric string; anything else is "not recorded".
 function num(v) {
-  if (v === undefined || v === null || v === '') return null;
+  if ((typeof v !== 'number' && typeof v !== 'string') || v === '') return null;
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
 }
@@ -250,13 +252,21 @@ function classifyMessages(msgs) {
   return 'chat-text';
 }
 
+// The text of a text part or block: a string, or nothing. Anything else is a
+// format error, not something to coerce (an object may not even convert).
+function partText(v, what) {
+  if (v === undefined || v === null) return '';
+  if (typeof v !== 'string') fail(`${what} is not a string`);
+  return v;
+}
+
 function openaiText(content) {
   if (content === null || content === undefined) return '';
   if (typeof content === 'string') return content;
   if (Array.isArray(content)) {
     return content
       .filter((p) => p && (p.type === 'text' || p.type === 'refusal'))
-      .map((p) => (p.type === 'refusal' ? p.refusal : p.text) ?? '')
+      .map((p) => (p.type === 'refusal' ? partText(p.refusal, 'an OpenAI refusal part') : partText(p.text, 'an OpenAI text part')))
       .join('\n');
   }
   if (isPlainObject(content)) return canonicalJSON(content);
@@ -303,7 +313,8 @@ function openaiSteps(msgs) {
       const tcs = Array.isArray(m.tool_calls) ? m.tool_calls : [];
       if (text.trim() !== '' || tcs.length === 0) steps.push(step({ role: 'assistant', kind: 'message', text }));
       for (const tc of tcs) {
-        const fn = tc.function || {};
+        if (!isPlainObject(tc)) fail('an OpenAI tool_call is not an object');
+        const fn = isPlainObject(tc.function) ? tc.function : {};
         if (typeof fn.name !== 'string') fail('an OpenAI tool_call has no function.name');
         const args = canonicalArgs(fn.arguments ?? {});
         if (tc.id) calls.set(tc.id, { tool: fn.name, args });
@@ -325,7 +336,7 @@ function anthropicResultText(content) {
   if (content === undefined || content === null) return '';
   if (typeof content === 'string') return content;
   if (Array.isArray(content)) {
-    return content.filter((b) => b && b.type === 'text').map((b) => b.text ?? '').join('\n');
+    return content.filter((b) => b && b.type === 'text').map((b) => partText(b.text, 'an Anthropic text block')).join('\n');
   }
   return canonicalJSON(content);
 }
@@ -347,7 +358,8 @@ function anthropicSteps(msgs) {
     for (const b of blocks) {
       if (!isPlainObject(b) || typeof b.type !== 'string') fail('an Anthropic content block has no "type"');
       if (b.type === 'text') {
-        pendingText = pendingText === null ? b.text ?? '' : `${pendingText}\n${b.text ?? ''}`;
+        const t = partText(b.text, 'an Anthropic text block');
+        pendingText = pendingText === null ? t : `${pendingText}\n${t}`;
       } else if (b.type === 'tool_use') {
         flushText();
         if (typeof b.name !== 'string') fail('an Anthropic tool_use block has no "name"');
@@ -383,16 +395,24 @@ function isSpanLike(v) {
   return 'name' in v || 'spanId' in v || 'span_id' in v || 'traceId' in v || 'context' in v;
 }
 
+// o[k] = v, except that k "__proto__" becomes an own key instead of replacing
+// the prototype (which would make attributes appear that the span never set).
+function setOwn(o, k, v) {
+  Object.defineProperty(o, k, { value: v, enumerable: true, writable: true, configurable: true });
+}
+
 function otlpValue(v) {
   if (!isPlainObject(v)) return v;
   if ('stringValue' in v) return v.stringValue;
-  if ('intValue' in v) return Number(v.intValue);
-  if ('doubleValue' in v) return Number(v.doubleValue);
+  if ('intValue' in v) return num(v.intValue);
+  if ('doubleValue' in v) return num(v.doubleValue);
   if ('boolValue' in v) return Boolean(v.boolValue);
-  if ('arrayValue' in v) return (v.arrayValue.values || []).map(otlpValue);
+  if ('arrayValue' in v) return otlpList(v.arrayValue?.values, 'an OTLP arrayValue').map(otlpValue);
   if ('kvlistValue' in v) {
     const o = {};
-    for (const kv of v.kvlistValue.values || []) o[kv.key] = otlpValue(kv.value);
+    for (const kv of otlpList(v.kvlistValue?.values, 'an OTLP kvlistValue')) {
+      if (kv && typeof kv.key === 'string') setOwn(o, kv.key, otlpValue(kv.value));
+    }
     return o;
   }
   if ('bytesValue' in v) return v.bytesValue;
@@ -402,7 +422,7 @@ function otlpValue(v) {
 function flatAttributes(attrs) {
   if (Array.isArray(attrs)) {
     const o = {};
-    for (const kv of attrs) if (kv && typeof kv.key === 'string') o[kv.key] = otlpValue(kv.value);
+    for (const kv of attrs) if (kv && typeof kv.key === 'string') setOwn(o, kv.key, otlpValue(kv.value));
     return o;
   }
   return isPlainObject(attrs) ? { ...attrs } : {};
@@ -417,11 +437,25 @@ function flatSpan(s) {
   };
 }
 
+// An OTLP container field: a list, or absent. Anything else is a format error
+// rather than a TypeError deep inside the loop.
+function otlpList(v, where) {
+  if (v === undefined || v === null) return [];
+  if (!Array.isArray(v)) fail(`${where} is not a list`);
+  return v;
+}
+
 function otlpSpans(doc) {
   const out = [];
-  for (const rs of doc.resourceSpans) {
-    for (const ss of rs.scopeSpans || rs.instrumentationLibrarySpans || []) {
-      for (const s of ss.spans || []) out.push(flatSpan(s));
+  for (const [r, rs] of doc.resourceSpans.entries()) {
+    if (!isPlainObject(rs)) fail(`resourceSpans[${r}] is not an object`);
+    const scopes = rs.scopeSpans ?? rs.instrumentationLibrarySpans;
+    for (const [n, ss] of otlpList(scopes, `resourceSpans[${r}].scopeSpans`).entries()) {
+      if (!isPlainObject(ss)) fail(`resourceSpans[${r}].scopeSpans[${n}] is not an object`);
+      for (const [k, s] of otlpList(ss.spans, `resourceSpans[${r}].scopeSpans[${n}].spans`).entries()) {
+        if (!isPlainObject(s)) fail(`resourceSpans[${r}].scopeSpans[${n}].spans[${k}] is not an object`);
+        out.push(flatSpan(s));
+      }
     }
   }
   if (out.length === 0) fail('the OTLP document contains no spans');
@@ -432,7 +466,8 @@ function sortKey(start) {
   if (start === null || start === undefined) return null;
   if (typeof start === 'number' && Number.isFinite(start)) return BigInt(Math.trunc(start));
   if (typeof start === 'string' && /^\d+$/.test(start)) return BigInt(start);
-  const t = Date.parse(String(start));
+  if (typeof start !== 'string') return null;
+  const t = Date.parse(start);
   return Number.isNaN(t) ? null : BigInt(t) * 1000000n;
 }
 
@@ -477,7 +512,7 @@ function otelSteps(spans) {
       const error = isErrorStatus(s.status, a);
       let text = a['gen_ai.tool.call.result'];
       if (text === undefined || text === null) {
-        text = error ? [a['error.type'], s.status && s.status.message].filter(Boolean).join(': ') : '';
+        text = error ? [a['error.type'], s.status && s.status.message].filter((x) => (typeof x === 'string' && x !== '') || typeof x === 'number').join(': ') : '';
       } else if (typeof text !== 'string') {
         text = canonicalJSON(text);
       }
@@ -490,7 +525,7 @@ function otelSteps(spans) {
       const parts = first && Array.isArray(first.parts) ? first.parts : [];
       const text = parts
         .filter((p) => p && p.type === 'text')
-        .map((p) => p.content ?? '')
+        .map((p) => partText(p.content, 'an OTel text part'))
         .join('\n');
       steps.push(step({ role: 'assistant', kind: 'message', text }));
       const sys = systemText(a['gen_ai.system_instructions']);
