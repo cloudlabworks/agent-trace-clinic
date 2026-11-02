@@ -1,6 +1,7 @@
 # Agent Trace Clinic
 
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/cloudlabworks/agent-trace-clinic/badge)](https://scorecard.dev/viewer/?uri=github.com/cloudlabworks/agent-trace-clinic)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/16206/badge)](https://www.bestpractices.dev/projects/16206)
 
 **v0.1.0, MIT.** [Browser app, HTML export and container instructions](RUNNING.md). The optional model pass below is experimental and is not part of the release.
 
