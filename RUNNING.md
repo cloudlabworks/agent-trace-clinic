@@ -1,6 +1,6 @@
 # Running Agent Trace Clinic
 
-The v0.1.0 release excludes the experimental model pass. It does not need model weights or cloud credentials.
+Releases exclude the experimental model pass. It does not need model weights or cloud credentials.
 
 ## Run
 
@@ -19,6 +19,16 @@ CLI export:
 ```sh
 node cli.mjs cases/openai-tool-loop.json --html > report.html
 ```
+
+## Verifying a release
+
+From v0.1.1, each GitHub Release has `agent-trace-clinic-<version>.tar.gz` and build provenance for it, signed through Sigstore by the `release` workflow. With the GitHub CLI:
+
+```sh
+gh attestation verify agent-trace-clinic-0.1.1.tar.gz --repo cloudlabworks/agent-trace-clinic
+```
+
+To verify offline, add `--bundle agent-trace-clinic-0.1.1.tar.gz.intoto.jsonl` (the provenance file attached to the same release). Unpack the tarball and run `npm start` in it; the runtime needs no `npm install`.
 
 ## Container
 
@@ -45,7 +55,7 @@ Owner: Cloud Lab Works / Waku. One portable JS core shared by browser and CLI.
 The old optional-model work remains experimental, outside this release.
 Existing README limits still apply, particularly name-based completion checks and false positives on legitimate retries.
 
-Out of scope for v0.1.0: hosted deployment, external client recovery benchmarks, cross-cloud deployment and production support claims.
+Out of scope for v0.1.x: hosted deployment, external client recovery benchmarks, cross-cloud deployment and production support claims.
 
 MCP Failure Lab is a separate sibling project; its synthetic OpenAI-shaped traces already pass through this normaliser.
 The bridge is a file, not a network service or shared credential.

@@ -3,7 +3,7 @@
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/cloudlabworks/agent-trace-clinic/badge)](https://scorecard.dev/viewer/?uri=github.com/cloudlabworks/agent-trace-clinic)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/16206/badge)](https://www.bestpractices.dev/projects/16206)
 
-**v0.1.0, MIT.** [Browser app, HTML export and container instructions](RUNNING.md). The optional model pass below is experimental and is not part of the release.
+**v0.1.1, MIT.** [Browser app, HTML export and container instructions](RUNNING.md). The optional model pass below is experimental and is not part of the release.
 
 Paste an AI agent's trace and get a triage report. This repository holds the parts that need no model: a normaliser that turns four trace formats into one step list, deterministic detectors that look for common agent failures, a usage calculator, a test suite of synthetic traces with their expected findings, and a small CLI. It also holds an optional model pass (`labeller.js`, see [Model pass](#model-pass)), in which a small model running in the visitor's browser gives a labelled second opinion.
 
