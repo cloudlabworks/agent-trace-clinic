@@ -1,7 +1,8 @@
 # Release notes
 
-## Unreleased
+## v0.1.1, 2026-11-02
 
+- Signed releases: a new `release` workflow runs on version tags. It packs the tagged source tree as `agent-trace-clinic-<version>.tar.gz` (`git archive`; the app has no build step and no runtime dependencies), records a GitHub artifact attestation (Sigstore-signed SLSA build provenance) for it, and creates a GitHub Release with the tarball and its provenance bundle `agent-trace-clinic-<version>.tar.gz.intoto.jsonl`. See "Verifying a release" in RUNNING.md.
 - Property-based tests (`test/property.test.js`, fast-check 4.10.2), run by `npm test`.
 - Fix: inputs the property tests generated crashed the normaliser with a TypeError instead of an `Unrecognised trace format` error: an OTLP `scopeSpans` or `spans` that is not a list, a null span, an `arrayValue` or `kvlistValue` without a list, a non-string text part or refusal, a null OpenAI tool call, and object-valued token counts, start times or `error.type`. Object-valued counts and start times now read as not recorded.
 - Fix: a `"__proto__"` key in tool arguments was dropped from canonical JSON, and one in OTLP attributes replaced the attribute object's prototype, so a span could gain attributes it never set.
