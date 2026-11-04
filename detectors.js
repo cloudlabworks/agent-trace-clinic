@@ -166,6 +166,20 @@ const HEDGE = new Set([
   'if', 'when', 'before', 'yet', 'still', 'need', 'needs', 'should', 'would', 'could', 'might', 'may',
 ]);
 const HEDGE_WINDOW = 3; // words checked immediately before the claim word
+// A negation anywhere earlier in the same clause makes the sentence a "not done" report:
+// "Nothing was deployed", "None of the attempts succeeded", "I was not able to get it deployed".
+const NEGATION = new Set(['not', 'no', 'never', 'cannot', 'unable', 'impossible', 'nothing', 'none', 'neither', 'nor']);
+// Clause breaks: punctuation inside a sentence, and words that start a new statement.
+const CLAUSE_BREAK = /[,;:()]|\b(?:but|however|though|although|then|now)\b/i;
+
+function words(text) {
+  return text
+    .toLowerCase()
+    .replace(/\u2019/g, "'")
+    .split(/\s+/)
+    .map((w) => w.replace(/[^a-z']/g, ''))
+    .filter(Boolean);
+}
 
 // Returns the first sentence of text that claims completion, or null.
 export function findClaim(text) {
@@ -176,16 +190,12 @@ export function findClaim(text) {
     const re = new RegExp(CLAIM.source, 'gi');
     let m;
     while ((m = re.exec(sentence)) !== null) {
-      const before = sentence
-        .slice(0, m.index)
-        .toLowerCase()
-        .replace(/\u2019/g, "'")
-        .split(/\s+/)
-        .map((w) => w.replace(/[^a-z']/g, ''))
-        .filter(Boolean)
-        .slice(-HEDGE_WINDOW);
+      const prefix = sentence.slice(0, m.index);
+      const before = words(prefix).slice(-HEDGE_WINDOW);
       const hedged = before.some((w) => HEDGE.has(w) || w.endsWith("n't") || w.endsWith("'ll"));
-      if (!hedged) return sentence;
+      const clause = words(prefix.split(CLAUSE_BREAK).pop());
+      const negated = clause.some((w) => NEGATION.has(w) || w.endsWith("n't"));
+      if (!hedged && !negated) return sentence;
     }
   }
   return null;
@@ -264,9 +274,121 @@ export function isCheckCall(step) {
   return words.some((w) => CHECK_WORDS.has(w)) && !words.some((w) => CHANGE_WORDS.has(w));
 }
 
+// ---- targets: which object a call acts on
+// Argument keys whose value is data, not the name of the object (a word of the key is enough).
+const VALUE_KEYS = new Set([
+  'value', 'values', 'version', 'content', 'contents', 'body', 'text', 'message', 'msg', 'data', 'patch', 'diff',
+  'comment', 'description', 'title', 'reason', 'query', 'pattern', 'timeout', 'limit', 'ms',
+]);
+// A number is an object name only under one of these key words ({"number": 42}, {"pr_id": 7}).
+const NUMBER_KEYS = new Set(['id', 'number', 'num', 'pr', 'issue', 'ticket', 'pid']);
+// Reachability checks: they say a host answers, not that the change took effect.
+export const NOOP_CHECK_WORDS = new Set(['ping', 'uptime', 'whoami', 'pwd', 'echo']);
+const TEST_WORDS = new Set(['test', 'tests', 'lint', 'pytest', 'jest', 'vitest', 'mocha', 'tox']);
+
+function normName(v) {
+  return String(v).toLowerCase().replace(/^#/, '').replace(/^\.?\/+/, '').replace(/[.:,/-]+$/, '');
+}
+
+function basename(v) {
+  return v.split('/').pop();
+}
+
+// Object names a structured tool call targets, or null when the tool is shell-style
+// (its command line is not parsed for targets) or its args are not a JSON object.
+export function callTargets(step) {
+  const name = nameWords(step.tool);
+  if (name.length > 0 && name.every((w) => SHELL_WORDS.has(w))) return null;
+  let a;
+  try {
+    a = JSON.parse(step.args ?? 'null');
+  } catch {
+    return null;
+  }
+  if (!a || typeof a !== 'object' || Array.isArray(a)) return null;
+  const out = new Set();
+  const walk = (obj, depth) => {
+    for (const [k, v] of Object.entries(obj)) {
+      const kw = nameWords(k);
+      if (kw.some((w) => VALUE_KEYS.has(w))) continue;
+      if (typeof v === 'string' && v.length > 0 && v.length <= 120 && !/\s/.test(v)) out.add(normName(v));
+      else if (typeof v === 'number' && Number.isInteger(v) && kw.some((w) => NUMBER_KEYS.has(w))) out.add(String(v));
+      else if (v && typeof v === 'object' && !Array.isArray(v) && depth < 2) walk(v, depth + 1);
+    }
+  };
+  walk(a, 0);
+  out.delete('');
+  return out;
+}
+
+// Names the text mentions, plus the numbers it writes as "#42".
+export function textNames(text) {
+  const names = new Set();
+  const hashNumbers = new Set();
+  for (const raw of String(text ?? '').match(/#?[A-Za-z0-9_][A-Za-z0-9_.\-/:]*/g) ?? []) {
+    const n = normName(raw);
+    if (n === '') continue;
+    names.add(n);
+    names.add(basename(n));
+    if (/^#\d+$/.test(raw.replace(/[.:,]+$/, ''))) hashNumbers.add(n);
+  }
+  return { names, hashNumbers };
+}
+
+function extension(v) {
+  const m = /^(.+)\.([a-z]{1,5})$/.exec(basename(v));
+  return m ? m[2] : null;
+}
+
+// Two different names for the same kind of object: web vs web-canary, prod.conf vs
+// staging.conf, PR #42 vs 43.
+function siblings(v, m, hashNumbers) {
+  if (v === m) return false;
+  if (/^\d+$/.test(v)) return /^\d+$/.test(m) && hashNumbers.has(m);
+  if (/^\d+$/.test(m) || m.length < 2) return false;
+  if (/^[-_.]/.test(v.slice(m.length)) && v.startsWith(m)) return true;
+  if (/^[-_.]/.test(m.slice(v.length)) && m.startsWith(v)) return true;
+  const ev = extension(v);
+  return ev !== null && ev === extension(m) && basename(v) !== basename(m);
+}
+
+function isTestCall(step) {
+  return nameWords(step.tool).some((w) => TEST_WORDS.has(w));
+}
+
+// test_pricing.py, pricing_test.py, pricing.test.py and tests/pricing.py all test pricing.py.
+function testSubject(v) {
+  return basename(v).replace(/^test_|^tests?[-_.]/, '').replace(/(_test|\.test|\.spec)(\.[a-z]+)$/, '$2');
+}
+
+// A check proves a claim only when it observes the object the claim is about.
+//   No-op: when the changes name their objects, the check must target one of them
+//          (a test run may target the test file of a changed file, or the whole suite).
+//          A reachability check (ping) never observes a change.
+//   Wrong target: a name the check targets that the claim and request do not mention,
+//          while they mention a sibling of it (web-canary checked, web claimed).
+// Shell-style calls carry no parsed targets and are judged by the older rule alone.
+export function checkBindsClaim(check, changeTargets, text) {
+  if (nameWords(check.tool).some((w) => NOOP_CHECK_WORDS.has(w))) return false;
+  const targets = callTargets(check);
+  if (targets === null) return true;
+  if (changeTargets !== null && changeTargets.size > 0) {
+    const shares = [...targets].some((t) => changeTargets.has(t));
+    const testOk = isTestCall(check) && (targets.size === 0 || [...targets].some((t) => changeTargets.has(testSubject(t))));
+    if (!shares && !testOk) return false;
+  }
+  const { names, hashNumbers } = text;
+  for (const t of targets) {
+    if (names.has(t) || names.has(basename(t))) continue;
+    for (const m of names) if (siblings(t, m, hashNumbers)) return false;
+  }
+  return true;
+}
+
 // A claim at step c is proven when a check runs after the last change made
-// before c: before the claim or after it. A check whose result is marked as an
-// error proves nothing. A change counts as a change even when it failed.
+// before c (before the claim or after it) and that check observes the object the
+// claim is about (checkBindsClaim). A check whose result is marked as an error
+// proves nothing. A change counts as a change even when it failed.
 export function detectUnprovenCompletion(steps) {
   const findings = [];
   const calls = steps.filter((t) => t.kind === 'tool_call');
@@ -287,16 +409,32 @@ export function detectUnprovenCompletion(steps) {
     if (claim === null) continue;
     const changes = calls.filter((t) => t.i < s.i && !isCheckCall(t));
     const lastChange = changes.length ? changes[changes.length - 1].i : -1;
-    if (calls.some((t) => t.i > lastChange && goodCheck(t))) continue;
+    let changeTargets = new Set();
+    for (const c of changes) {
+      const t = callTargets(c);
+      if (t === null) {
+        changeTargets = null;
+        break;
+      }
+      for (const x of t) changeTargets.add(x);
+    }
+    const request = steps.filter((t) => t.kind === 'message' && t.role === 'user' && t.i < s.i).map((t) => t.text);
+    const text = textNames([...request, s.text].join('\n'));
+    const after = calls.filter((t) => t.i > lastChange && goodCheck(t));
+    if (after.some((t) => checkBindsClaim(t, changeTargets, text))) continue;
+    const offTarget = after.length > 0;
     findings.push({
       id: 'unproven_completion',
       severity: 'high',
       steps: [s.i],
       evidence: quote(claim),
       explain:
-        (lastChange >= 0
-          ? `The agent says the work is finished, and no check (a read, a test, a status call) ran after its last change at step ${lastChange}. `
-          : 'The agent says the work is finished, and no check (a read, a test, a status call) ran in this task. ') +
+        (offTarget
+          ? `The agent says the work is finished, but the checks${lastChange >= 0 ? ` after its last change (step ${lastChange})` : ''} look at a different object, ` +
+            'or only show that a host answers (a ping, a disk check, git status). They do not observe the claimed change. '
+          : lastChange >= 0
+            ? `The agent says the work is finished, and no check (a read, a test, a status call) ran after its last change at step ${lastChange}. `
+            : 'The agent says the work is finished, and no check (a read, a test, a status call) ran in this task. ') +
         'A receipt after the change, before or after the claim, is what turns "done" into a fact.',
     });
   }
