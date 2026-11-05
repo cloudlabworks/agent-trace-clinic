@@ -54,8 +54,8 @@ jobs:
             --bundle "${FILE}.intoto.jsonl" \
             --repo "$GITHUB_REPOSITORY" \
             --signer-workflow "${GITHUB_REPOSITORY}/.github/workflows/release.yml"
-          awk -v head="## v${VERSION}," 'index($0, head) == 1 {p = 1; next} p && /^## / {exit} p' RELEASE-NOTES.md > notes.md
-          test -s notes.md || echo "See RELEASE-NOTES.md." > notes.md
+          awk -v head="## [${VERSION}]" 'index($0, head) == 1 {p = 1; next} p && /^## / {exit} p' CHANGELOG.md > notes.md
+          test -s notes.md || echo "See CHANGELOG.md." > notes.md
           gh release create "$GITHUB_REF_NAME" \
             --repo "$GITHUB_REPOSITORY" \
             --verify-tag \
